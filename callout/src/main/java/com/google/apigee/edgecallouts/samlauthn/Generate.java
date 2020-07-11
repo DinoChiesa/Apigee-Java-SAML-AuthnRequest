@@ -162,7 +162,7 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     //     .format(DateTimeFormatter.ISO_INSTANT);
   }
 
-  private String sign_RSA(SignConfiguration signConfiguration)
+  private String sign_RSA(SignConfiguration signConfiguration, MessageContext msgCtxt)
       throws InstantiationException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
           KeyException, MarshalException, XMLSignatureException, TransformerException,
              CertificateEncodingException, InvalidNameException, IOException,
@@ -200,6 +200,7 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     String bodyId = java.util.UUID.randomUUID().toString();
     authnRequest.setAttribute("ID", bodyId);
     authnRequest.setIdAttribute("ID", true);
+    msgCtxt.setVariable(varName("request_id"), bodyId);
 
     // 2. set up the ds:Reference
     String digestMethodUri =
@@ -527,9 +528,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
               .withDigestMethod(getDigestMethod(msgCtxt))
               .withKeyIdentifierType(getKeyIdentifierType(msgCtxt));
 
-      String authnRequestXmlString = sign_RSA(signConfiguration);
-      String outputVar = getOutputVar(msgCtxt);
-      msgCtxt.setVariable(outputVar, authnRequestXmlString);
+      String authnRequestXmlString = sign_RSA(signConfiguration, msgCtxt);
+      msgCtxt.setVariable(getOutputVar(msgCtxt), authnRequestXmlString);
       return ExecutionResult.SUCCESS;
     } catch (IllegalStateException exc1) {
       setExceptionVariables(exc1, msgCtxt);
