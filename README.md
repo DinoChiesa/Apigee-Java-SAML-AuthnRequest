@@ -62,10 +62,10 @@ Configure the policy this way:
     <Property name='output-variable'>output</Property>
     <Property name='private-key'>{my_private_key}</Property>
     <Property name='certificate'>{my_certificate}</Property>
-    <Property name='providerName'>{providerName}</Property>
+    <Property name='provider-name'>{providerName}</Property>
     <Property name='destination'>{destination}</Property>
     <Property name='issuer'>{issuer}</Property>
-    <Property name='acsUrl'>{acsUrl}</Property>
+    <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
   <ResourceURL>java://apigee-samlauthn-20200710.jar</ResourceURL>
