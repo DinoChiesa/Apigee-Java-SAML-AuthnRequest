@@ -1,0 +1,5 @@
+<AssignMessage name='AM-Response'>
+  <Set>
+    <Payload contentType='application/xml'>{authnrequest}</Payload>
+  </Set>
+</AssignMessage>
