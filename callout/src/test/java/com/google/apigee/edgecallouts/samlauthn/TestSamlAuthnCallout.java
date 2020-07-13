@@ -97,7 +97,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     //props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
@@ -120,7 +120,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
   @Test
   public void missingProviderName() throws Exception {
     String method = "missingProviderName() ";
-    String expectedError = "provider-name resolves to an empty string";
+    String expectedError = "service-provider-name resolves to an empty string";
     String expectedException = "java.lang.IllegalStateException: " + expectedError;
     String destination = "https://idp.example.com/SSOService.php";
     String providerName = "TestServiceProvider";
@@ -139,7 +139,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    //props.put("provider-name", "{providerName}");
+    //props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
@@ -181,7 +181,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
     //props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
@@ -223,7 +223,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     //props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
@@ -263,7 +263,8 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
+    props.put("name-id-format", "email");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
@@ -343,10 +344,10 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
-    props.put("signing-method", "rsa-sha256");
+    props.put("signature-method", "rsa-sha256");
     props.put("output-variable", "output");
 
     Generate callout = new Generate(props);
@@ -399,7 +400,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("digest-method", "sha256");
@@ -466,7 +467,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    props.put("provider-name", "{providerName}");
+    props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("digest-method", "sha256");
@@ -482,4 +483,63 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     Object errorOutput = msgCtxt.getVariable("samlauthn_error");
     Assert.assertEquals(errorOutput, expectedError, "errorOutput");
   }
+
+    @Test
+  public void withIdpLocation() throws Exception {
+    String method = "withIdpLocation() ";
+    String destination = "https://idp.example.com/SSOService.php";
+    String idpId = "https://idp.example.com/idp/saml2/metadata";
+    String idpLocation = "https://idp.example.com/idp/saml2/sso";
+    String providerName = "TestServiceProvider";
+    String issuer = "https://sp.example.com/demo1/metadata.php";
+    String acsUrl = "https://sp.example.com/demo1/index.php?acs";
+
+    msgCtxt.setVariable("my-private-key", pairs[2].privateKey);
+    msgCtxt.setVariable("my-certificate", pairs[2].certificate);
+    msgCtxt.setVariable("destination", destination);
+    msgCtxt.setVariable("providerName", providerName);
+    msgCtxt.setVariable("issuer", issuer);
+    msgCtxt.setVariable("acsUrl", acsUrl);
+
+    Map<String, String> props = new HashMap<String, String>();
+    props.put("debug", "true");
+    props.put("private-key", "{my-private-key}");
+    props.put("certificate", "{my-certificate}");
+    props.put("destination", "{destination}");
+    props.put("service-provider-name", "{providerName}");
+    props.put("issuer", "{issuer}");
+    props.put("acs-url", "{acsUrl}");
+    props.put("idp-id", idpId);
+    props.put("idp-location", idpLocation);
+    props.put("output-variable", "output");
+
+    Generate callout = new Generate(props);
+
+    // execute and retrieve output
+    ExecutionResult actualResult = callout.execute(msgCtxt, exeCtxt);
+    Assert.assertEquals(actualResult, ExecutionResult.SUCCESS, "result not as expected");
+    Object exception = msgCtxt.getVariable("samlauthn_exception");
+    Assert.assertNull(exception, method + "exception");
+    Object errorOutput = msgCtxt.getVariable("samlauthn_error");
+    Assert.assertNull(errorOutput, "error not as expected");
+    Object stacktrace = msgCtxt.getVariable("samlauthn_stacktrace");
+    Assert.assertNull(stacktrace, method + "stacktrace");
+
+    String output = (String) msgCtxt.getVariable("output");
+    System.out.printf("** Output:\n" + output + "\n");
+
+    Document doc = docFromStream(new ByteArrayInputStream(output.getBytes(StandardCharsets.UTF_8)));
+
+    // signature
+    NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+    Assert.assertEquals(nl.getLength(), 1, method + "Signature element");
+
+    // SignatureMethod (sha256)
+    nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "SignatureMethod");
+    Assert.assertEquals(nl.getLength(), 1, method + "SignatureMethod element");
+    Element element = (Element) nl.item(0);
+    String signatureMethodAlgorithm = element.getAttribute("Algorithm");
+    Assert.assertNotNull(signatureMethodAlgorithm);
+  }
+
 }

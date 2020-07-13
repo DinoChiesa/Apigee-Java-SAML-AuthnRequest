@@ -21,7 +21,7 @@
   </PostFlow>
 
   <Flows>
-    <Flow name='generate'>
+    <Flow name='generate1'>
       <Request>
       </Request>
       <Response>
@@ -35,7 +35,41 @@
           <Name>AM-Response</Name>
         </Step>
       </Response>
-      <Condition>(proxy.pathsuffix ~ "/generate") and (request.verb = "GET")</Condition>
+      <Condition>(proxy.pathsuffix ~ "/generate1") and (request.verb = "GET")</Condition>
+    </Flow>
+
+    <Flow name='generate2'>
+      <Request>
+      </Request>
+      <Response>
+        <Step>
+          <Name>AM-KeyAndCert</Name>
+        </Step>
+        <Step>
+          <Name>Java-SAML-AuthnRequest-2</Name>
+        </Step>
+        <Step>
+          <Name>AM-Response</Name>
+        </Step>
+      </Response>
+      <Condition>(proxy.pathsuffix ~ "/generate2") and (request.verb = "GET")</Condition>
+    </Flow>
+
+    <Flow name='generate3'>
+      <Request>
+      </Request>
+      <Response>
+        <Step>
+          <Name>AM-KeyAndCert</Name>
+        </Step>
+        <Step>
+          <Name>Java-SAML-AuthnRequest-3</Name>
+        </Step>
+        <Step>
+          <Name>AM-Response</Name>
+        </Step>
+      </Response>
+      <Condition>(proxy.pathsuffix ~ "/generate3") and (request.verb = "GET")</Condition>
     </Flow>
 
     <Flow name='unknown'>
