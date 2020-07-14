@@ -1,4 +1,4 @@
-<JavaCallout name='Java-SAML-AuthnRequest-1'>
+<JavaCallout name='Java-SAML-AuthnRequest-4'>
   <Properties>
     <Property name='output-variable'>authnrequest</Property>
     <Property name='private-key'>{my_private_key}</Property>
@@ -7,6 +7,11 @@
     <Property name='acs-url'>https://sp.example.com/demo1/index.php?acs</Property>
     <Property name='destination'>https://idp.example.com/SSOService.php</Property>
     <Property name='service-provider-name'>TestServiceProvider</Property>
+    <Property name='force-authn'>true</Property>
+    <Property name='digest-method'>sha256</Property>
+    <Property name='signature-method'>rsa-sha256</Property>
+    <Property name='requester-id'>https://whatever.example.com/saml/metadata</Property>
+    <Property name='binding-type'>redirect</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
   <ResourceURL>java://apigee-samlauthn-20200714.jar</ResourceURL>

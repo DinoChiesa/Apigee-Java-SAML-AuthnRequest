@@ -2,7 +2,7 @@
 
 This directory contains the Java source code and pom.xml file required to
 compile a simple Java callout for Apigee, that creates a signed SAML
-AuthnRequest, for use in SP-initiated login, with HTTP-POST binding.
+AuthnRequest, for use in SP-initiated login, with HTTP-POST binding or HTTP Redirect binding.
 
 
 ## Disclaimer
@@ -32,7 +32,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200713.jar . Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200714.jar . Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -55,7 +55,7 @@ Make sure these JARs are available as resources in the  proxy or in the environm
 
 ### Signing
 
-Configure the policy this way:
+Here's an example policy configuration:
 
 ```xml
 <JavaCallout name='Java-SAMLAuthn-Generate>
@@ -69,9 +69,12 @@ Configure the policy this way:
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200713.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200714.jar</ResourceURL>
 </JavaCallout>
 ```
+
+This policy will produce a SAML AuthnRequest document and embed a Signature element as a child of the root element.
+
 
 The available properties are:
 
@@ -93,9 +96,11 @@ The available properties are:
 | idp-location          | optional. the ID for the IDP, often a URL pointing to metadata.                           |
 | name-id-format        | optional. Either 'transient' or 'email'.                                                  |
 | requested-authn-context | optional.  The only value supported is "password". Causes an RequestedAuthnContext element to be included in the emitted AuthnRequest. |
+| binding-type          | optional. Either "Redirect" or "POST". Defaults to "POST"                                 |
 | output-variable       | optional. the variable name in which to write the signed XML. Defaults to message.content |
 
-This policy will produce a SAML AuthnRequest document and embed a Signature element as a child of the root element.
+For all properties, the curly braces indicate a reference to a context variable. 
+You can also omit the curlies to "hard-code" a value. 
 
 Regarding `key-identifier-type`, these are the options:
 
@@ -119,7 +124,6 @@ Regarding `key-identifier-type`, these are the options:
      </KeyValue>
    </KeyInfo>
   ```
-
 
 
 
@@ -228,6 +232,40 @@ curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate3
 ```
 
 ```
+<samlp:AuthnRequest
+    xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+    xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" AssertionConsumerServiceURL="https://sp.example.com/demo1/index.php?acs" Destination="https://idp.example.com/SSOService.php" ForceAuthn="true" ID="req-c81b99e3-a11e-47ab-b990-d105db08ec7a" IssueInstant="2020-07-14T16:00:17Z" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" ProviderName="TestServiceProvider" Version="2.0">
+  <saml:Issuer>http://sp.example.com/demo1/metadata.php</saml:Issuer>
+  <Signature
+      xmlns="http://www.w3.org/2000/09/xmldsig#">
+    <SignedInfo>
+      <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+      <Reference URI="#req-c81b99e3-a11e-47ab-b990-d105db08ec7a">
+        <Transforms>
+          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+        </Transforms>
+        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <DigestValue>JoB5QU/gMFsn1kXJLWIb4YQL8UtTFGtTqWs3c+lMRcs=</DigestValue>
+      </Reference>
+    </SignedInfo>
+    <SignatureValue>Gf2vMlghMmmBGjahAbGA0mnC6/PcbKAMI1lZlnLis5xN0E2yMXpTNjUhHOAnzB2HOrqPO/Ya6eoA
+    XJJ//MPrPhONfV2ti6F0jORyw8SUupbuwP9qQA9YgJwpRFLPhDlMLVXMux4jAMMK8T7n3HhZqlw7
+    HCedOuTvIYJ7C8Py9OMoNZMwYWFk8QDLgaJFNYZYdsdgy7maLYGio6Vg7zXASammAAN7EKbBHiRd
+    aVJqjaRpmO/JiDa7AopGZbnUjZyjsTAzQNl5s1ao29SMEv0Y+KciPS1wqoVU/cuRpf/n8XGxw0DZ
+    kK+IsBEiTD/RCz1bUVrUJRRI9XpQ9wHklkLuYA==</SignatureValue>
+    <KeyInfo>
+      <X509Data>
+        <X509Certificate>MIIDpDCCAowCCQDsXkZg2rbAwTANBgkqhkiG9w0BAQUFADCBkzELMAkGA1UEBhMCVVMxEzARBgNVBAgMCldhc2hpbmd0b24xETAPBgNVBAcMCEtpcmtsYW5kMQ8wDQYDVQQKDAZHb29nbGUxDzANBgNVBAsMBkFwaWdlZTEaMBgGA1UEAwwRYXBpZ2VlLmdvb2dsZS5jb20xHjAcBgkqhkiG9w0BCQEWD2Rpbm9AYXBpZ2VlLmNvbTAeFw0xOTEwMDgxMTExMjBaFw0yOTEwMDUxMTExMjBaMIGTMQswCQYDVQQGEwJVUzETMBEGA1UECAwKV2FzaGluZ3RvbjERMA8GA1UEBwwIS2lya2xhbmQxDzANBgNVBAoMBkdvb2dsZTEPMA0GA1UECwwGQXBpZ2VlMRowGAYDVQQDDBFhcGlnZWUuZ29vZ2xlLmNvbTEeMBwGCSqGSIb3DQEJARYPZGlub0BhcGlnZWUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqJA2NwXeqXaVaHO0mkKDpTdhPCh/80gH2Oun4DJOYjYgvdMRJ83xB6Hwm809T593rkX9PwOjUDQ7kJvH0aLaqxb+FrrTDTFcXZXJZ65dca9lYARxgEAwasPIkvBdr0nP2W2VQgPKtkwStZinMiJh/JSlXCz7ULDGVqW8FyklGaVIkxrXhHsjH+hhJ8Kp+zjFsfdsTkGbaqXj/qexeHUBcF6GbHe7xhaLoj/P24D7mFHB3uXx4vN3ohP+ZiT1y5X8fCLVu5SSC+vDFHR2Z5I26yTlcNRwKt24lNypGsEzM5KZILJlEr3BnAA1qkcSX7wZQDHp3XOHJHaR6lxarvYlmQIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQBD+S4bF8b07955E7HshWFez5Q4/7cXhGPjFaiNw9lH9Ny1iIcblRl36iiVda4Lemy1Kxa5xGJ+I5NZ8k1MyxZ1x5K9bPX5LiI8ThLGRxBNUNLgaoQ+7FZLklpZARoIuQ3Gg90V0qUqkm2eipgZxzdtEGj+lqoX10A2B+wimO6nzUv6vYoJARMBtqsYmQKz5GRBoajGdMn60UF9Ry5B32k31JVpat4qm7+Ig1YMwv2nfY6bgHzsI4WjETOLvFCYgBDJzIEy+0jA1FUe5Ec5Fs5nmiG8F7FRJ/9aYb1e+cbQVRZyc1wKlmIReK/LgG8FjdDjeqFZTg0AjInG8/oOz5ib</X509Certificate>
+      </X509Data>
+    </KeyInfo>
+  </Signature>
+  <samlp:NameIDPolicy AllowCreate="true" Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/>
+  <samlp:Scoping>
+    <samlp:RequesterID>https://whatever.example.com/saml/metadata</samlp:RequesterID>
+  </samlp:Scoping>
+</samlp:AuthnRequest>
 ```
 
 The responses in these examples have been prettified. The signed document will not be pretty-printed

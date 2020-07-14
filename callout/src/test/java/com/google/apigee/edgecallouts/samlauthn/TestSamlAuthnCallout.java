@@ -2,11 +2,16 @@ package com.google.apigee.edgecallouts.samlauthn;
 
 import com.apigee.flow.execution.ExecutionResult;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -96,7 +101,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("debug", "true");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
-    //props.put("destination", "{destination}");
+    // props.put("destination", "{destination}");
     props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
@@ -139,7 +144,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
-    //props.put("service-provider-name", "{providerName}");
+    // props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
@@ -182,7 +187,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
     props.put("service-provider-name", "{providerName}");
-    //props.put("issuer", "{issuer}");
+    // props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
 
@@ -225,7 +230,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("destination", "{destination}");
     props.put("service-provider-name", "{providerName}");
     props.put("issuer", "{issuer}");
-    //props.put("acs-url", "{acsUrl}");
+    // props.put("acs-url", "{acsUrl}");
     props.put("output-variable", "output");
 
     Generate callout = new Generate(props);
@@ -484,7 +489,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     Assert.assertEquals(errorOutput, expectedError, "errorOutput");
   }
 
-    @Test
+  @Test
   public void withIdpLocation() throws Exception {
     String method = "withIdpLocation() ";
     String destination = "https://idp.example.com/SSOService.php";
@@ -534,7 +539,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
     Assert.assertEquals(nl.getLength(), 1, method + "Signature element");
 
-    // SignatureMethod (sha256)
+    // SignatureMethod exists
     nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "SignatureMethod");
     Assert.assertEquals(nl.getLength(), 1, method + "SignatureMethod element");
     Element element = (Element) nl.item(0);
@@ -542,4 +547,84 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     Assert.assertNotNull(signatureMethodAlgorithm);
   }
 
+  public static byte[] decompress(byte[] data) throws IOException, DataFormatException {
+    Inflater inflater = new Inflater(true);
+    inflater.setInput(data);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    byte[] buffer = new byte[1024];
+    while (!inflater.finished()) {
+      int count = inflater.inflate(buffer);
+      outputStream.write(buffer, 0, count);
+    }
+    outputStream.close();
+    byte[] output = outputStream.toByteArray();
+    return output;
+  }
+
+  @Test
+  public void httpRedirect() throws Exception {
+    String method = "httpRedirect() ";
+    String destination = "https://idp.example.com/SSOService.php";
+    String idpId = "https://idp.example.com/idp/saml2/metadata";
+    String idpLocation = "https://idp.example.com/idp/saml2/sso";
+    String providerName = "TestServiceProvider";
+    String issuer = "https://sp.example.com/demo1/metadata.php";
+    String acsUrl = "https://sp.example.com/demo1/index.php?acs";
+
+    msgCtxt.setVariable("my-private-key", pairs[2].privateKey);
+    msgCtxt.setVariable("my-certificate", pairs[2].certificate);
+    msgCtxt.setVariable("destination", destination);
+    msgCtxt.setVariable("providerName", providerName);
+    msgCtxt.setVariable("issuer", issuer);
+    msgCtxt.setVariable("acsUrl", acsUrl);
+
+    Map<String, String> props = new HashMap<String, String>();
+    props.put("debug", "true");
+    props.put("private-key", "{my-private-key}");
+    props.put("certificate", "{my-certificate}");
+    props.put("destination", "{destination}");
+    props.put("service-provider-name", "{providerName}");
+    props.put("issuer", "{issuer}");
+    props.put("acs-url", "{acsUrl}");
+    props.put("idp-id", idpId);
+    props.put("idp-location", idpLocation);
+    props.put("binding-type", "redirect");
+    props.put("output-variable", "output");
+
+    Generate callout = new Generate(props);
+
+    // execute and retrieve output
+    ExecutionResult actualResult = callout.execute(msgCtxt, exeCtxt);
+    Assert.assertEquals(actualResult, ExecutionResult.SUCCESS, "result not as expected");
+    Object exception = msgCtxt.getVariable("samlauthn_exception");
+    Assert.assertNull(exception, method + "exception");
+    Object errorOutput = msgCtxt.getVariable("samlauthn_error");
+    Assert.assertNull(errorOutput, "error not as expected");
+    Object stacktrace = msgCtxt.getVariable("samlauthn_stacktrace");
+    Assert.assertNull(stacktrace, method + "stacktrace");
+
+    String output = (String) msgCtxt.getVariable("output");
+    //System.out.printf("** Output:\n%s\n", output);
+
+    // URL-decode the String
+    output = URLDecoder.decode(output, "UTF-8");
+    System.out.printf("** URL-Decoded:\n%s\n", output);
+    // base64-Decode the String into bytes
+    byte[] decoded = Base64.getDecoder().decode(output);
+    // Decompress the bytes
+    byte[] decompressed = decompress(decoded);
+
+    Document doc = docFromStream(new ByteArrayInputStream(decompressed));
+
+    // signature
+    NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+    Assert.assertEquals(nl.getLength(), 1, method + "Signature element");
+
+    // SignatureMethod exists
+    nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "SignatureMethod");
+    Assert.assertEquals(nl.getLength(), 1, method + "SignatureMethod element");
+    Element element = (Element) nl.item(0);
+    String signatureMethodAlgorithm = element.getAttribute("Algorithm");
+    Assert.assertNotNull(signatureMethodAlgorithm);
+  }
 }

@@ -72,6 +72,23 @@
       <Condition>(proxy.pathsuffix ~ "/generate3") and (request.verb = "GET")</Condition>
     </Flow>
 
+    <Flow name='generate4'>
+      <Request>
+      </Request>
+      <Response>
+        <Step>
+          <Name>AM-KeyAndCert</Name>
+        </Step>
+        <Step>
+          <Name>Java-SAML-AuthnRequest-4</Name>
+        </Step>
+        <Step>
+          <Name>AM-Response</Name>
+        </Step>
+      </Response>
+      <Condition>(proxy.pathsuffix ~ "/generate4") and (request.verb = "GET")</Condition>
+    </Flow>
+
     <Flow name='unknown'>
       <!--
            applies as a "default" flow, in case none of the conditions

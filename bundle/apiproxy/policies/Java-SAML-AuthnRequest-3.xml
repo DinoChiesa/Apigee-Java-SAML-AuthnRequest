@@ -14,5 +14,5 @@
     <Property name='name-id-format'>unspecified</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200713.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200714.jar</ResourceURL>
 </JavaCallout>

@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.apigee.edgecallouts</groupId>
   <artifactId>apigee-samlauthn</artifactId>
-  <version>20200713</version>
+  <version>20200714</version>
   <name>ApigeeJavaSamlAuthnRequest</name>
   <url>http://maven.apache.org</url>
   <packaging>jar</packaging>

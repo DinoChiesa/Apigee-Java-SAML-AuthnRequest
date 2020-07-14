@@ -19,12 +19,12 @@ import com.apigee.flow.execution.ExecutionContext;
 import com.apigee.flow.execution.ExecutionResult;
 import com.apigee.flow.execution.spi.Execution;
 import com.apigee.flow.message.MessageContext;
-import com.google.apigee.util.TimeResolver;
 import com.google.apigee.util.XmlUtils;
 import com.google.apigee.xml.Namespaces;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
@@ -42,12 +42,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 import javax.naming.InvalidNameException;
-import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.DigestMethod;
@@ -168,11 +167,23 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     throw new IllegalStateException("that value for name-id-format is not supported");
   }
 
+  public static String compressAndEncode(String data) throws IOException {
+    try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+      try (DeflaterOutputStream stream =
+          new DeflaterOutputStream(buffer, new Deflater(Deflater.DEFLATED, true))) {
+        stream.write(data.getBytes(StandardCharsets.UTF_8));
+      }
+      byte[] compressed = buffer.toByteArray();
+      String base64 = Base64.getEncoder().encodeToString(compressed);
+      return URLEncoder.encode( base64, "UTF-8" );
+    }
+  }
+
   private String sign_RSA(SignConfiguration signConfiguration, MessageContext msgCtxt)
       throws InstantiationException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
           KeyException, MarshalException, XMLSignatureException, TransformerException,
-             CertificateEncodingException, InvalidNameException, IOException,
-             SAXException, ParserConfigurationException {
+          CertificateEncodingException, InvalidNameException, IOException, SAXException,
+          ParserConfigurationException {
 
     // 0. validate that the cert signs the public key that corresponds to the private key
     RSAPublicKey certPublicKey = (RSAPublicKey) signConfiguration.certificate.getPublicKey();
@@ -187,12 +198,13 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     }
 
     // 1. start with the core AuthnRequest
-    String samlAuthnRequest = Constants.AUTHN_REQUEST_TEMPLATE
-      .replaceFirst("@@SERVICE_PROVIDER_NAME@@", signConfiguration.serviceProviderName)
-      .replaceFirst("@@ISSUE_INSTANT@@", getISOTimestamp(0))
-      .replaceFirst("@@DESTINATION@@", signConfiguration.destination)
-      .replaceFirst("@@ACS_URL@@", signConfiguration.acsUrl)
-      .replaceFirst("@@ISSUER@@", signConfiguration.issuer);
+    String samlAuthnRequest =
+        Constants.AUTHN_REQUEST_TEMPLATE
+            .replaceFirst("@@SERVICE_PROVIDER_NAME@@", signConfiguration.serviceProviderName)
+            .replaceFirst("@@ISSUE_INSTANT@@", getISOTimestamp(0))
+            .replaceFirst("@@DESTINATION@@", signConfiguration.destination)
+            .replaceFirst("@@ACS_URL@@", signConfiguration.acsUrl)
+            .replaceFirst("@@ISSUER@@", signConfiguration.issuer);
 
     Document doc = XmlUtils.parseXml(samlAuthnRequest);
     Element authnRequest = doc.getDocumentElement();
@@ -237,7 +249,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       if (!signConfiguration.requestedAuthnContext.equals("password")) {
         throw new IllegalStateException("that value for RequestedAuthnContext not supported");
       }
-      Element requestedAuthnContext = doc.createElementNS(Namespaces.SAMLP, "samlp:RequestedAuthnContext");
+      Element requestedAuthnContext =
+          doc.createElementNS(Namespaces.SAMLP, "samlp:RequestedAuthnContext");
       requestedAuthnContext.setAttribute("Comparison", "exact");
       Element contextClassRef = doc.createElementNS(Namespaces.SAML, "saml:AuthnContextClassRef");
       contextClassRef.setTextContent(Constants.AUTHN_CONTEXT_CLASS_REF_PASSWORD);
@@ -252,8 +265,7 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       requesterId.setTextContent(signConfiguration.requesterId);
       scoping.appendChild(requesterId);
       current = insertAfter(scoping, current);
-    }
-    else if (signConfiguration.idpId != null) {
+    } else if (signConfiguration.idpId != null) {
       Element scoping = doc.createElementNS(Namespaces.SAMLP, "samlp:Scoping");
       Element idpList = doc.createElementNS(Namespaces.SAMLP, "samlp:IDPList");
       Element idpEntry = doc.createElementNS(Namespaces.SAMLP, "samlp:IDPEntry");
@@ -282,15 +294,15 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM");
     DigestMethod digestMethod = signatureFactory.newDigestMethod(digestMethodUri, null);
 
-    List<Transform> transforms = Arrays.asList(
-        signatureFactory.newTransform("http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
-
-        signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
+    List<Transform> transforms =
+        Arrays.asList(
+            signatureFactory.newTransform(
+                "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
+            signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
 
     List<Reference> references = new ArrayList<Reference>();
     references.add(
-          signatureFactory.newReference(
-              "#" + bodyId, digestMethod, transforms, null, null));
+        signatureFactory.newReference("#" + bodyId, digestMethod, transforms, null, null));
 
     // 6. add <SignatureMethod Algorithm="..."?>
     String signingMethodUri =
@@ -307,7 +319,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
             CanonicalizationMethod.EXCLUSIVE, (C14NMethodParameterSpec) null);
 
     // 8. get the SignedInfo
-    DOMSignContext signingContext = new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
+    DOMSignContext signingContext =
+        new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
     SignedInfo signedInfo =
         signatureFactory.newSignedInfo(canonicalizationMethod, signatureMethod, references);
     KeyInfoFactory kif = signatureFactory.getKeyInfoFactory();
@@ -319,7 +332,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     if (signConfiguration.keyIdentifierType == KeyIdentifierType.X509_CERT_DIRECT) {
       // <KeyInfo>
       //   <X509Data>
-      //     <X509Certificate>MIICAjCCAWugAwIBAgIQwZyW5YOCXZxHg1MBV2CpvDANBgkhkiG9w0BAQnEdD9tI7IYAAoK4O+35EOzcXbvc4Kzz7BQnulQ=</X509Certificate>
+      //
+      // <X509Certificate>MIICAjCCAWugAwIBAgIQwZyW5YOCXZxHg1MBV2CpvDANBgkhkiG9w0BAQnEdD9tI7IYAAoK4O+35EOzcXbvc4Kzz7BQnulQ=</X509Certificate>
       //   </X509Data>
       // </KeyInfo>
       Element x509Data = doc.createElementNS(Namespaces.XMLDSIG, "X509Data");
@@ -357,12 +371,16 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     XMLSignature signature = signatureFactory.newXMLSignature(signedInfo, keyInfo);
     signature.sign(signingContext);
 
-    // 11. emit the resulting document
+    // 11. generate the string representation for the resulting document
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     Transformer transformer = TransformerFactory.newInstance().newTransformer();
     transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
     transformer.transform(new DOMSource(doc), new StreamResult(baos));
-    return new String(baos.toByteArray(), StandardCharsets.UTF_8);
+    String signedXml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+
+    // 12. emit the bare doc or the encoded doc, as appropriate
+    return
+     (signConfiguration.bindingType == BindingType.HTTP_REDIRECT) ? compressAndEncode(signedXml) : signedXml;
   }
 
   private static RSAPrivateKey readKey(String privateKeyPemString, String password)
@@ -513,20 +531,24 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     return false;
   }
 
-  enum KeyIdentifierType {
-    NOT_SPECIFIED,
-    //THUMBPRINT,
-    X509_CERT_DIRECT,
-    //BST_DIRECT_REFERENCE,
-    RSA_KEY_VALUE;
-    //ISSUER_SERIAL;
-
-    static KeyIdentifierType fromString(String s) {
-       for (KeyIdentifierType t : KeyIdentifierType.values()) {
-         if (t.name().equals(s)) return t;
-       }
-       return KeyIdentifierType.NOT_SPECIFIED;
+  protected BindingType getBindingType(MessageContext msgCtxt) {
+    String value = (String) getSimpleOptionalProperty("binding-type", msgCtxt);
+    if (value == null) return BindingType.HTTP_POST;
+    value = value.trim().toUpperCase();
+    if (!value.startsWith("HTTP-")) {
+      if (value.startsWith("HTTP")) {
+        value = value.replaceAll("^HTTP", "HTTP-");
+      }
+      else {
+        value = "HTTP-" + value;
+      }
     }
+    BindingType t = BindingType.fromString(value.replaceAll("-","_"));
+    if (t == BindingType.NOT_SPECIFIED) {
+      msgCtxt.setVariable(varName("warning"), "unrecognized binding-type");
+      return BindingType.HTTP_POST;
+    }
+    return t;
   }
 
   private KeyIdentifierType getKeyIdentifierType(MessageContext msgCtxt) throws Exception {
@@ -539,111 +561,6 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       return KeyIdentifierType.X509_CERT_DIRECT;
     }
     return t;
-  }
-
-  static class SignConfiguration {
-    // required
-    public RSAPrivateKey privatekey;
-    public X509Certificate certificate;
-    public String destination;
-    public String serviceProviderName;
-    public String acsUrl;
-    public String issuer;
-    // optional
-    public boolean forceAuthn;
-    public String subject; // not recommended for SAML2
-    public String nameIdFormat;
-    public String requestedAuthnContext;
-    public String idpId, idpLocation;    // under scoping
-    public String requesterId;           // under scoping
-    public String signingMethod;
-    public String digestMethod;
-    public KeyIdentifierType keyIdentifierType;
-
-    public SignConfiguration() {
-      keyIdentifierType = KeyIdentifierType.X509_CERT_DIRECT;
-      //nameIdFormat = "email";
-    }
-
-    public SignConfiguration withKey(RSAPrivateKey key) {
-      this.privatekey = key;
-      return this;
-    }
-
-    public SignConfiguration withCertificate(X509Certificate certificate) {
-      this.certificate = certificate;
-      return this;
-    }
-
-    public SignConfiguration withServiceProviderName(String serviceProviderName) {
-      this.serviceProviderName = serviceProviderName;
-      return this;
-    }
-
-    public SignConfiguration withDestination(String destination) {
-      this.destination = destination;
-      return this;
-    }
-
-    public SignConfiguration withAcsUrl(String acsUrl) {
-      this.acsUrl = acsUrl;
-      return this;
-    }
-
-    public SignConfiguration withIssuer(String issuer) {
-      this.issuer = issuer;
-      return this;
-    }
-
-    public SignConfiguration withSubject(String subject) {
-      this.subject = subject;
-      return this;
-    }
-
-    public SignConfiguration withNameIdFormat(String nameIdFormat) {
-      this.nameIdFormat = nameIdFormat;
-      return this;
-    }
-
-    public SignConfiguration withRequestedAuthnContext(String requestedAuthnContext) {
-      this.requestedAuthnContext = requestedAuthnContext;
-      return this;
-    }
-
-    public SignConfiguration withIdpId(String idpId) {
-      this.idpId = idpId;
-      return this;
-    }
-
-    public SignConfiguration withIdpLocation(String idpLocation) {
-      this.idpLocation = idpLocation;
-      return this;
-    }
-
-    public SignConfiguration withRequesterId(String requesterId) {
-      this.requesterId = requesterId;
-      return this;
-    }
-
-    public SignConfiguration withSignatureMethod(String signingMethod) {
-      this.signingMethod = signingMethod;
-      return this;
-    }
-
-    public SignConfiguration withDigestMethod(String digestMethod) {
-      this.digestMethod = digestMethod;
-      return this;
-    }
-
-    public SignConfiguration withKeyIdentifierType(KeyIdentifierType keyIdentifierType) {
-      this.keyIdentifierType = keyIdentifierType;
-      return this;
-    }
-
-    public SignConfiguration withForceAuthn(boolean forceAuthn) {
-      this.forceAuthn = forceAuthn;
-      return this;
-    }
   }
 
   public ExecutionResult execute(final MessageContext msgCtxt, final ExecutionContext execContext) {
@@ -665,7 +582,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
               .withIdpLocation(getIdpLocation(msgCtxt))
               .withSignatureMethod(getSignatureMethod(msgCtxt))
               .withDigestMethod(getDigestMethod(msgCtxt))
-              .withKeyIdentifierType(getKeyIdentifierType(msgCtxt));
+              .withKeyIdentifierType(getKeyIdentifierType(msgCtxt))
+              .withBindingType(getBindingType(msgCtxt));
 
       String authnRequestXmlString = sign_RSA(signConfiguration, msgCtxt);
       msgCtxt.setVariable(getOutputVar(msgCtxt), authnRequestXmlString);
