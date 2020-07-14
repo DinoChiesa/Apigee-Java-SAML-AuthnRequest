@@ -75,7 +75,8 @@ Here's an example policy configuration:
 </JavaCallout>
 ```
 
-This policy will produce a SAML AuthnRequest document and embed a Signature element as a child of the root element.
+This configuration tells the  policy to produce a SAML AuthnRequest document,
+with an embedded Signature element as a child of the root element.
 
 
 The available properties are:
@@ -108,14 +109,32 @@ The available properties are:
 For all properties, the curly braces indicate a reference to a context variable.
 You can also omit the curlies to "hard-code" a value.
 
-When the property `binding-type` is `post`, the callout policy will set a single  output variable containing the XML string representing a signed AuthnRequest. You can use the `output-variable` property to affect which variable gets this string.
+For outputs, there are two options 
 
-When the property `binding-type` is `redirect`, the callout policy will set four distinct output variables with strings:
-* samlauthn_SAMLRequest
-* samlauthn_Signature
-* samlauthn_SigAlg
-* samlauthn_RelayState
 
+<table>
+  <tr>
+    <th>
+`binding-type`
+    </th>
+    <th>Callout behavior and result </th>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>the callout policy will set a single output variable containing the XML string representing a signed AuthnRequest. You can use the `output-variable` property to affect which variable gets this string. </td>
+  </tr>
+  <tr>
+    <td>Redirect</td>
+    <td>When the property `binding-type` is `redirect`, the callout policy will set four distinct output variables with strings:
+      <ul>
+        <li><code>samlauthn_SAMLRequest</code> - the unsigned AuthnRequest</li>
+        <li><code>samlauthn_Signature</code> - the signature value</li>
+        <li><code>samlauthn_SigAlg</code> - the URI for the signing method</li>
+        <li><code>samlauthn_RelayState</code> - the relay state, which is passed in as a parameter to the policy. </li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
 Regarding `key-identifier-type`, these are the options:
 
