@@ -1,0 +1,13 @@
+<AssignMessage name='AM-Response-HTTP-Redirect'>
+  <Set>
+    <Payload contentType='text/plain'><![CDATA[
+SAMLRequest={samlauthn_SAMLRequest}
+
+SigAlg={samlauthn_SigAlg}
+
+Signature={samlauthn_Signature}
+
+RelayState={samlauthn_RelayState}
+]]></Payload>
+  </Set>
+</AssignMessage>

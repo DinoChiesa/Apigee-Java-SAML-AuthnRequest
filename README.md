@@ -4,6 +4,8 @@ This directory contains the Java source code and pom.xml file required to
 compile a simple Java callout for Apigee, that creates a signed SAML
 AuthnRequest, for use in SP-initiated login, with HTTP-POST binding or HTTP Redirect binding.
 
+For signature algorithms, it supports `rsa-sha1` and `rsa-sha256`.
+
 
 ## Disclaimer
 
@@ -32,7 +34,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200714.jar . Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200714-1.jar. Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -69,7 +71,7 @@ Here's an example policy configuration:
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200714-1.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -88,23 +90,34 @@ The available properties are:
 | acs-url               | required. The URL for the AssertionConsumerService.                                       |
 | private-key-password  | optional. The password for the key, if it is encrypted.                                   |
 | force-authn           | optional. true/false. Defaults false.                                                     |
-| key-identifier-type   | optional. One of {`X509_CERT_DIRECT`, or `RSA_KEY_VALUE`}.  See below for details.        |
+| key-identifier-type   | optional. One of {`X509_CERT_DIRECT`, or `RSA_KEY_VALUE`}.  See below for details. Applies only to POST `binding-type`. |
 | signature-method      | optional. Takes value rsa-sha1 or rsa-sha256. Defaults to rsa-sha1.                       |
-| digest-method         | optional. Takes value sha1 or sha256. Defaults to sha1.                                   |
+| digest-method         | optional. Takes value sha1 or sha256. Defaults to sha1. Aplpies only to POST `binding-type`. |
 | requester-id          | optional. the ID for the requester, often a URL. Causes a Scoping element with a RequesterID child to be included in the AuthnRequest. |
 | idp-id                | optional. the ID for the IDP, often a URL pointing to metadata. Causes a Scoping element with an IDPList child to be included in the AuthnRequest. |
 | idp-location          | optional. the ID for the IDP, often a URL pointing to metadata.                           |
 | name-id-format        | optional. Either 'transient' or 'email'.                                                  |
 | requested-authn-context | optional.  The only value supported is "password". Causes an RequestedAuthnContext element to be included in the emitted AuthnRequest. |
 | binding-type          | optional. Either "Redirect" or "POST". Defaults to "POST"                                 |
-| output-variable       | optional. the variable name in which to write the signed XML. Defaults to message.content |
+| relay-state           | optional. Applies only to `binding-type` of Redirect.                                     |
+| url-encode-output     | optional. true/false.  Applies only to Redirect `binding-type`. If true, the policy URL-encodes the various outputs.                     |
+| output-variable       | optional. Applies only to POST `binding-type`. Specifies the variable name in which to write the signed XML. Defaults to message.content |
 
-For all properties, the curly braces indicate a reference to a context variable. 
-You can also omit the curlies to "hard-code" a value. 
+For all properties, the curly braces indicate a reference to a context variable.
+You can also omit the curlies to "hard-code" a value.
+
+When the property `binding-type` is `post`, the callout policy will set a single  output variable containing the XML string representing a signed AuthnRequest. You can use the `output-variable` property to affect which variable gets this string.
+
+When the property `binding-type` is `redirect`, the callout policy will set four distinct output variables with strings:
+* samlauthn_SAMLRequest
+* samlauthn_Signature
+* samlauthn_SigAlg
+* samlauthn_RelayState
+
 
 Regarding `key-identifier-type`, these are the options:
 
-* `x509_cert_direct` gives you this:
+* `x509_cert_direct` gives you this in the XML output:
   ```xml
   <KeyInfo>
      <X509Data>
@@ -113,7 +126,7 @@ Regarding `key-identifier-type`, these are the options:
    </KeyInfo>
   ```
 
-* `rsa_key_value` gives you this:
+* `rsa_key_value` gives you this in the XML output:
   ```xml
   <KeyInfo>
     <KeyValue>
@@ -124,8 +137,6 @@ Regarding `key-identifier-type`, these are the options:
      </KeyValue>
    </KeyInfo>
   ```
-
-
 
 ## Example API Proxy Bundle
 
@@ -270,6 +281,32 @@ curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate3
 
 The responses in these examples have been prettified. The signed document will not be pretty-printed
 like that. Applying an XML Digital Signature will canonicalize (c14n), and collapse whitespace.
+
+## Redirect Example
+
+The policy here uses `binding-type` = `redirect`.  This  means the policy will emit the SAML Request and the signature separately.
+
+Invoke:
+
+```
+curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate4
+```
+
+The output looks like this:
+
+```
+SAMLRequest=fVLLbsIwELzzFZbvefFKsUgqWlQViRZE0h56c51NEymxg9ehfH6TQFo4lJu9OzOeHe8ceVlUbFGbTO5gXwMaciwLiaxrBLTWkimOOTLJS0BmBIsWL2s2tF1WaWWUUAW9oNxmcETQJleSkkV/fFQS6xJ0BPqQC3jbrQOaGVMhcxysbDjysirAFqp0EiiV5+QygaNdZdU9F0jJsvGcS95K/RHz5JoZRZuzfkuk5ElpAd3UATW6BkpWy4Bq2FuT9M4H15tanCcja+xBYs1S37NS7gtvnM7uxIQ3aMQaVhINlyagQ3foWq5veeN46LLRlHnuByXbczwPjeFcft1O5vMEQvYcx1tru4niTuCQJ6BfG3RA42bO8wx9g5J30NgN3mjQcEDIvP0E1tnTYZvGfymWYHjCDW/zmDuXrPlpJyKhqsZRfz1vB+jVMuxT/s64gQPoK/kW/qt+Ur5m97X+gUFfuNzC8Ac=
+
+SigAlg=http://www.w3.org/2000/09/xmldsig#rsa-sha1
+
+Signature=HnWqA2H8Rr9IjRqw2NzrU6aVEeLgE/KzGe6Xl3JErliWD6krypaCvJsTtRdHi7BQPOd8wglWvIb1N66401AB2Ndzv6a4uMsGldvIH8Ff39Vxjm7OFFQMdQhcw8gEy7GvGXXETe3yi0UOrFhpLHxdlEWjXylqnBHOOW1ygL7O82YUEc4grzStsYVPqA5BIjlDaWyTxLSNK892YxZ0exK3zNpRj7JYSyda2JDN2CzgRjKuA4OGF48ghMijTAhbGw+FdTceUm6VfqrGGd+zTZcQ2HpaWNIoWeMIh8JlYIbmdfoLJqeVbdZg7BpbdAQZBWhWo+b0vCeVdbnxbu73wkEvAg==
+
+RelayState=rrt-5181747005327207520-b-gwo1-17079-37860156-1
+```
+
+Each of those parameters can be used as query parameters in a redirect to the IDP signon URL. Be mindful of URL-encoding the parameter values when constructing the query string.
+
+You can paste these items into [the form here](https://www.samltool.com/validate_authn_req.php) to verify that the signed AuthnRequest is valid.  If you do that you can find the PEM-encoding of the certificate used for this signature in the API Proxy, in [AM-KeyAndCert.xml](./bundle/apiproxy/policies/AM-KeyAndCert.xml).
 
 ## About Keys
 

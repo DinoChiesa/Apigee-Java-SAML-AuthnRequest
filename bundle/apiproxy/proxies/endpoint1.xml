@@ -83,7 +83,7 @@
           <Name>Java-SAML-AuthnRequest-4</Name>
         </Step>
         <Step>
-          <Name>AM-Response</Name>
+          <Name>AM-Response-HTTP-Redirect</Name>
         </Step>
       </Response>
       <Condition>(proxy.pathsuffix ~ "/generate4") and (request.verb = "GET")</Condition>
@@ -96,7 +96,9 @@
       -->
       <Description>Unknown request</Description>
       <Request>
-        <Step><Name>RF-UnknownRequest</Name></Step>
+        <Step>
+          <Name>RF-UnknownRequest</Name>
+        </Step>
       </Request>
       <Response/>
     </Flow>

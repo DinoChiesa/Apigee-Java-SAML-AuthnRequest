@@ -30,8 +30,8 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.Signature;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -65,6 +65,7 @@ import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -92,55 +93,11 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     super(properties);
   }
 
-  // public static String toPrettyString(Document document, int indent) {
-  //   try {
-  //     // Remove whitespaces outside tags
-  //     document.normalize();
-  //     XPath xPath = XPathFactory.newInstance().newXPath();
-  //     NodeList nodeList =
-  //         (NodeList)
-  //             xPath.evaluate("//text()[normalize-space()='']", document, XPathConstants.NODESET);
-  //
-  //     for (int i = 0; i < nodeList.getLength(); ++i) {
-  //       Node node = nodeList.item(i);
-  //       node.getParentNode().removeChild(node);
-  //     }
-  //
-  //     // Setup pretty print options
-  //     TransformerFactory transformerFactory = TransformerFactory.newInstance();
-  //     transformerFactory.setAttribute("indent-number", indent);
-  //     Transformer transformer = transformerFactory.newTransformer();
-  //     transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-  //     transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-  //     transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-  //
-  //     // Return pretty print xml string
-  //     StringWriter stringWriter = new StringWriter();
-  //     transformer.transform(new DOMSource(document), new StreamResult(stringWriter));
-  //     return stringWriter.toString();
-  //   } catch (Exception e) {
-  //     throw new RuntimeException(e);
-  //   }
-  // }
-
-  // public static Element getFirstChildElement(Element element) {
-  //   for (Node currentChild = element.getFirstChild();
-  //        currentChild != null;
-  //        currentChild = currentChild.getNextSibling()) {
-  //     if (currentChild instanceof Element) {
-  //       return (Element) currentChild;
-  //     }
-  //   }
-  //   return null;
-  // }
-
   private static String getISOTimestamp(int offsetFromNow) {
     // ex: '2019-11-03T10:15:30Z'
     ZonedDateTime zdt = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS);
     if (offsetFromNow != 0) zdt = zdt.plusSeconds(offsetFromNow);
     return zdt.format(DateTimeFormatter.ISO_INSTANT);
-    // return ZonedDateTime.ofInstant(Instant.ofEpochSecond(secondsSinceEpoch), ZoneOffset.UTC)
-    //     .format(DateTimeFormatter.ISO_INSTANT);
   }
 
   private static Element insertAfter(Element newElement, Element existingElement) {
@@ -175,16 +132,11 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       }
       byte[] compressed = buffer.toByteArray();
       String base64 = Base64.getEncoder().encodeToString(compressed);
-      return URLEncoder.encode( base64, "UTF-8" );
+      return base64;
     }
   }
 
-  private String sign_RSA(SignConfiguration signConfiguration, MessageContext msgCtxt)
-      throws InstantiationException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
-          KeyException, MarshalException, XMLSignatureException, TransformerException,
-          CertificateEncodingException, InvalidNameException, IOException, SAXException,
-          ParserConfigurationException {
-
+  private void sign_RSA(SignConfiguration signConfiguration, MessageContext msgCtxt) throws Exception {
     // 0. validate that the cert signs the public key that corresponds to the private key
     RSAPublicKey certPublicKey = (RSAPublicKey) signConfiguration.certificate.getPublicKey();
     final byte[] certModulus = certPublicKey.getModulus().toByteArray();
@@ -284,103 +236,163 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     authnRequest.setIdAttribute("ID", true);
     msgCtxt.setVariable(varName("request_id"), bodyId);
 
-    // 5. set up the ds:Reference
-    String digestMethodUri =
-        ((signConfiguration.digestMethod != null)
-                && (signConfiguration.digestMethod.toLowerCase().equals("sha256")))
-            ? DigestMethod.SHA256
-            : DigestMethod.SHA1;
-
-    XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM");
-    DigestMethod digestMethod = signatureFactory.newDigestMethod(digestMethodUri, null);
-
-    List<Transform> transforms =
-        Arrays.asList(
-            signatureFactory.newTransform(
-                "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
-            signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
-
-    List<Reference> references = new ArrayList<Reference>();
-    references.add(
-        signatureFactory.newReference("#" + bodyId, digestMethod, transforms, null, null));
-
-    // 6. add <SignatureMethod Algorithm="..."?>
-    String signingMethodUri =
+    // 5. get signing method URI
+    String signatureMethodUri =
         ((signConfiguration.signingMethod != null)
-                && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
-            ? "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-            : "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+         && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
+        ? "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+        : "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
 
-    SignatureMethod signatureMethod = signatureFactory.newSignatureMethod(signingMethodUri, null);
+    // 6. export the XML itself
+    msgCtxt.setVariable(varName("UnsignedRequest"), getXmlString(doc));
 
-    // 7. c14n method
-    CanonicalizationMethod canonicalizationMethod =
-        signatureFactory.newCanonicalizationMethod(
-            CanonicalizationMethod.EXCLUSIVE, (C14NMethodParameterSpec) null);
+    if (signConfiguration.bindingType == BindingType.HTTP_REDIRECT) {
+      String compressedAndBase64EncodedRequest = compressAndEncode(getXmlString(doc));
 
-    // 8. get the SignedInfo
-    DOMSignContext signingContext =
-        new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
-    SignedInfo signedInfo =
-        signatureFactory.newSignedInfo(canonicalizationMethod, signatureMethod, references);
-    KeyInfoFactory kif = signatureFactory.getKeyInfoFactory();
-
-    // 9. set up the KeyInfo
-    // The marshalled XMLSignature will be added as the last child element
-    // of the specified parent node.
-    KeyInfo keyInfo = null;
-    if (signConfiguration.keyIdentifierType == KeyIdentifierType.X509_CERT_DIRECT) {
-      // <KeyInfo>
-      //   <X509Data>
+      // Structure of the signature base:
+      //   SAMLRequest=value&RelayState=value&SigAlg=value
       //
-      // <X509Certificate>MIICAjCCAWugAwIBAgIQwZyW5YOCXZxHg1MBV2CpvDANBgkhkiG9w0BAQnEdD9tI7IYAAoK4O+35EOzcXbvc4Kzz7BQnulQ=</X509Certificate>
-      //   </X509Data>
-      // </KeyInfo>
-      Element x509Data = doc.createElementNS(Namespaces.XMLDSIG, "X509Data");
-      Element x509Certificate = doc.createElementNS(Namespaces.XMLDSIG, "X509Certificate");
-      x509Certificate.setTextContent(
-          Base64.getEncoder().encodeToString(signConfiguration.certificate.getEncoded()));
-      x509Data.appendChild(x509Certificate);
-      javax.xml.crypto.XMLStructure structure = new javax.xml.crypto.dom.DOMStructure(x509Data);
-      keyInfo = kif.newKeyInfo(java.util.Collections.singletonList(structure));
-    } else if (signConfiguration.keyIdentifierType == KeyIdentifierType.RSA_KEY_VALUE) {
-      // <KeyInfo>
-      //   <KeyValue>
-      //     <RSAKeyValue>
-      //       <Modulus>B6PenDyT58LjZlG6LYD27IFCh1yO+4...yCP9YNDtsLZftMLoQ==</Modulus>
-      //       <Exponent>AQAB</Exponent>
-      //     </RSAKeyValue>
-      //   </KeyValue>
-      // </KeyInfo>
-      Element keyValue = doc.createElementNS(Namespaces.XMLDSIG, "KeyValue");
-      Element rsaKeyValue = doc.createElementNS(Namespaces.XMLDSIG, "RSAKeyValue");
-      Element modulus = doc.createElementNS(Namespaces.XMLDSIG, "Modulus");
-      Element exponent = doc.createElementNS(Namespaces.XMLDSIG, "Exponent");
-      modulus.setTextContent(encodedCertModulus);
-      final byte[] certExponent = certPublicKey.getPublicExponent().toByteArray();
-      String encodedCertExponent = Base64.getEncoder().encodeToString(certExponent);
-      exponent.setTextContent(encodedCertExponent);
-      rsaKeyValue.appendChild(modulus);
-      rsaKeyValue.appendChild(exponent);
-      keyValue.appendChild(rsaKeyValue);
-      javax.xml.crypto.XMLStructure structure = new javax.xml.crypto.dom.DOMStructure(keyValue);
-      keyInfo = kif.newKeyInfo(java.util.Collections.singletonList(structure));
+      // Each value must be URL-encoded. Ordering is important.
+      String encodedRequest = URLEncoder.encode(compressedAndBase64EncodedRequest, "UTF-8");
+      String encodedRelayState = null;
+      String encodedSigAlg = URLEncoder.encode(signatureMethodUri, "UTF-8");
+      String signatureBase = "SAMLRequest=" + encodedRequest;
+      if (signConfiguration.relayState != null) {
+        encodedRelayState = URLEncoder.encode(signConfiguration.relayState, "UTF-8");
+        signatureBase += "&RelayState=" + encodedRelayState;
+      }
+      signatureBase += "&SigAlg=" + encodedSigAlg;
+
+      // The SAML Spec says that "SHA1WithRSA" or "SHA1withDSA" MUST be supported.
+      // It does not say if other signature methods should or may be supported.
+      // This implementation does not support DSA signatures.
+      String signatureAlgorithm =
+        ((signConfiguration.signingMethod != null)
+         && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
+        ? "SHA256WithRSA" : "SHA1WithRSA";
+
+      Signature signature = Signature.getInstance(signatureAlgorithm);
+      signature.initSign(configPrivateKey);
+      signature.update(signatureBase.getBytes(StandardCharsets.UTF_8));
+
+      byte[] signatureResult = signature.sign();
+      String base64EncodedSignature = Base64.getEncoder().encodeToString(signatureResult);
+
+      // Set the four outut variables:
+      // SAMLRequest
+      // Signature
+      // SigAlg
+      // RelayState
+      if (signConfiguration.urlEncodeOutput) {
+        msgCtxt.setVariable(varName("SAMLRequest"), encodedRequest);
+        msgCtxt.setVariable(varName("Signature"), URLEncoder.encode(base64EncodedSignature, "UTF-8"));
+        msgCtxt.setVariable(varName("SigAlg"), URLEncoder.encode(signatureMethodUri, "UTF-8"));
+        if (signConfiguration.relayState!= null)
+          msgCtxt.setVariable(varName("RelayState"), encodedRelayState);
+      }
+      else {
+        msgCtxt.setVariable(varName("SAMLRequest"), compressedAndBase64EncodedRequest);
+        msgCtxt.setVariable(varName("Signature"), base64EncodedSignature);
+        msgCtxt.setVariable(varName("SigAlg"), signatureMethodUri);
+        if (signConfiguration.relayState!= null)
+          msgCtxt.setVariable(varName("RelayState"), signConfiguration.relayState);
+      }
+
     }
+    else {
+      // 5. set up the ds:Reference
+      String digestMethodUri =
+        ((signConfiguration.digestMethod != null)
+         && (signConfiguration.digestMethod.toLowerCase().equals("sha256")))
+        ? DigestMethod.SHA256
+        : DigestMethod.SHA1;
 
-    // 10. sign
-    XMLSignature signature = signatureFactory.newXMLSignature(signedInfo, keyInfo);
-    signature.sign(signingContext);
+      XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM");
+      DigestMethod digestMethod = signatureFactory.newDigestMethod(digestMethodUri, null);
 
-    // 11. generate the string representation for the resulting document
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    Transformer transformer = TransformerFactory.newInstance().newTransformer();
-    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-    transformer.transform(new DOMSource(doc), new StreamResult(baos));
-    String signedXml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+      List<Transform> transforms =
+        Arrays.asList(
+                      signatureFactory.newTransform(
+                                                    "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
+                      signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
 
-    // 12. emit the bare doc or the encoded doc, as appropriate
-    return
-     (signConfiguration.bindingType == BindingType.HTTP_REDIRECT) ? compressAndEncode(signedXml) : signedXml;
+      List<Reference> references = new ArrayList<Reference>();
+      references.add(
+                     signatureFactory.newReference("#" + bodyId, digestMethod, transforms, null, null));
+
+      // 6. add <SignatureMethod Algorithm="..."?>
+      SignatureMethod signatureMethod = signatureFactory.newSignatureMethod(signatureMethodUri, null);
+
+      // 7. c14n method
+      CanonicalizationMethod canonicalizationMethod =
+        signatureFactory.newCanonicalizationMethod(
+                                                   CanonicalizationMethod.EXCLUSIVE, (C14NMethodParameterSpec) null);
+
+      // 8. get the SignedInfo
+      DOMSignContext signingContext =
+        new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
+      SignedInfo signedInfo =
+        signatureFactory.newSignedInfo(canonicalizationMethod, signatureMethod, references);
+      KeyInfoFactory kif = signatureFactory.getKeyInfoFactory();
+
+      // 9. set up the KeyInfo
+      // The marshalled XMLSignature will be added as the last child element
+      // of the specified parent node.
+      KeyInfo keyInfo = null;
+      if (signConfiguration.keyIdentifierType == KeyIdentifierType.X509_CERT_DIRECT) {
+        // <KeyInfo>
+        //   <X509Data>
+        //
+        // <X509Certificate>MIICAjCCAWugAwIBAgIQwZyW5YOCXZxHg1MBV2CpvDANBgkhkiG9w0BAQnEdD9tI7IYAAoK4O+35EOzcXbvc4Kzz7BQnulQ=</X509Certificate>
+        //   </X509Data>
+        // </KeyInfo>
+        Element x509Data = doc.createElementNS(Namespaces.XMLDSIG, "X509Data");
+        Element x509Certificate = doc.createElementNS(Namespaces.XMLDSIG, "X509Certificate");
+        x509Certificate.setTextContent(
+                                       Base64.getEncoder().encodeToString(signConfiguration.certificate.getEncoded()));
+        x509Data.appendChild(x509Certificate);
+        javax.xml.crypto.XMLStructure structure = new javax.xml.crypto.dom.DOMStructure(x509Data);
+        keyInfo = kif.newKeyInfo(java.util.Collections.singletonList(structure));
+      } else if (signConfiguration.keyIdentifierType == KeyIdentifierType.RSA_KEY_VALUE) {
+        // <KeyInfo>
+        //   <KeyValue>
+        //     <RSAKeyValue>
+        //       <Modulus>B6PenDyT58LjZlG6LYD27IFCh1yO+4...yCP9YNDtsLZftMLoQ==</Modulus>
+        //       <Exponent>AQAB</Exponent>
+        //     </RSAKeyValue>
+        //   </KeyValue>
+        // </KeyInfo>
+        Element keyValue = doc.createElementNS(Namespaces.XMLDSIG, "KeyValue");
+        Element rsaKeyValue = doc.createElementNS(Namespaces.XMLDSIG, "RSAKeyValue");
+        Element modulus = doc.createElementNS(Namespaces.XMLDSIG, "Modulus");
+        Element exponent = doc.createElementNS(Namespaces.XMLDSIG, "Exponent");
+        modulus.setTextContent(encodedCertModulus);
+        final byte[] certExponent = certPublicKey.getPublicExponent().toByteArray();
+        String encodedCertExponent = Base64.getEncoder().encodeToString(certExponent);
+        exponent.setTextContent(encodedCertExponent);
+        rsaKeyValue.appendChild(modulus);
+        rsaKeyValue.appendChild(exponent);
+        keyValue.appendChild(rsaKeyValue);
+        javax.xml.crypto.XMLStructure structure = new javax.xml.crypto.dom.DOMStructure(keyValue);
+        keyInfo = kif.newKeyInfo(java.util.Collections.singletonList(structure));
+      }
+
+      // 10. sign
+      XMLSignature signature = signatureFactory.newXMLSignature(signedInfo, keyInfo);
+      signature.sign(signingContext);
+
+      // 12. set the string representation of the document into the output variable
+      msgCtxt.setVariable(getOutputVar(msgCtxt), getXmlString(doc));
+    }
+  }
+
+  protected String getXmlString(Document doc) throws TransformerConfigurationException, TransformerException {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      Transformer transformer = TransformerFactory.newInstance().newTransformer();
+      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+      transformer.transform(new DOMSource(doc), new StreamResult(baos));
+      String xmlString = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+      return xmlString;
   }
 
   private static RSAPrivateKey readKey(String privateKeyPemString, String password)
@@ -484,48 +496,15 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     return digestMethod;
   }
 
-  protected String getServiceProviderName(MessageContext msgCtxt) throws Exception {
-    return getSimpleRequiredProperty("service-provider-name", msgCtxt);
-  }
-
-  protected String getDestination(MessageContext msgCtxt) throws Exception {
-    return getSimpleRequiredProperty("destination", msgCtxt);
-  }
-
-  protected String getAcsUrl(MessageContext msgCtxt) throws Exception {
-    return getSimpleRequiredProperty("acs-url", msgCtxt);
-  }
-
-  protected String getIssuer(MessageContext msgCtxt) throws Exception {
-    return getSimpleRequiredProperty("issuer", msgCtxt);
-  }
-
-  protected String getSubject(MessageContext msgCtxt) throws Exception {
-    return getSimpleOptionalProperty("subject", msgCtxt);
-  }
-
-  protected String getNameIdFormat(MessageContext msgCtxt) throws Exception {
-    return getSimpleOptionalProperty("name-id-format", msgCtxt);
-  }
-
-  protected String getRequestedAuthnContext(MessageContext msgCtxt) throws Exception {
-    return getSimpleOptionalProperty("requested-authn-context", msgCtxt);
-  }
-
-  protected String getIdpId(MessageContext msgCtxt) throws Exception {
-    return getSimpleOptionalProperty("idp-id", msgCtxt);
-  }
-
-  protected String getIdpLocation(MessageContext msgCtxt) throws Exception {
-    return getSimpleOptionalProperty("idp-location", msgCtxt);
-  }
-
-  protected String getRequesterId(MessageContext msgCtxt) throws Exception {
-    return getSimpleOptionalProperty("requester-id", msgCtxt);
-  }
-
   protected boolean getForceAuthn(MessageContext msgCtxt) {
     String value = (String) getSimpleOptionalProperty("force-authn", msgCtxt);
+    if (value == null) return false;
+    if (value.trim().toLowerCase().equals("true")) return true;
+    return false;
+  }
+
+  protected boolean getUrlEncodeOutput(MessageContext msgCtxt) {
+    String value = (String) getSimpleOptionalProperty("url-encode-output", msgCtxt);
     if (value == null) return false;
     if (value.trim().toLowerCase().equals("true")) return true;
     return false;
@@ -538,12 +517,11 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     if (!value.startsWith("HTTP-")) {
       if (value.startsWith("HTTP")) {
         value = value.replaceAll("^HTTP", "HTTP-");
-      }
-      else {
+      } else {
         value = "HTTP-" + value;
       }
     }
-    BindingType t = BindingType.fromString(value.replaceAll("-","_"));
+    BindingType t = BindingType.fromString(value.replaceAll("-", "_"));
     if (t == BindingType.NOT_SPECIFIED) {
       msgCtxt.setVariable(varName("warning"), "unrecognized binding-type");
       return BindingType.HTTP_POST;
@@ -569,24 +547,25 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
           new SignConfiguration()
               .withKey(getPrivateKey(msgCtxt))
               .withCertificate(getCertificate(msgCtxt))
-              .withServiceProviderName(getServiceProviderName(msgCtxt))
-              .withDestination(getDestination(msgCtxt))
-              .withAcsUrl(getAcsUrl(msgCtxt))
+        .withServiceProviderName(getSimpleRequiredProperty("service-provider-name", msgCtxt))
+        .withDestination(getSimpleRequiredProperty("destination", msgCtxt))
+        .withAcsUrl(getSimpleRequiredProperty("acs-url", msgCtxt))
               .withForceAuthn(getForceAuthn(msgCtxt))
-              .withIssuer(getIssuer(msgCtxt))
-              .withSubject(getSubject(msgCtxt))
-              .withNameIdFormat(getNameIdFormat(msgCtxt))
-              .withRequestedAuthnContext(getRequestedAuthnContext(msgCtxt))
-              .withRequesterId(getRequesterId(msgCtxt))
-              .withIdpId(getIdpId(msgCtxt))
-              .withIdpLocation(getIdpLocation(msgCtxt))
+        .withUrlEncodeOutput(getUrlEncodeOutput(msgCtxt))
+        .withIssuer(getSimpleRequiredProperty("issuer", msgCtxt))
+              // .withSubject(getSubject(msgCtxt))
+              .withNameIdFormat(getSimpleOptionalProperty("name-id-format", msgCtxt))
+              .withRequestedAuthnContext(getSimpleOptionalProperty("requested-authn-context", msgCtxt))
+        .withRequesterId(getSimpleOptionalProperty("requester-id", msgCtxt))
+              .withIdpId(getSimpleOptionalProperty("idp-id", msgCtxt))
+        .withIdpLocation(getSimpleOptionalProperty("idp-location", msgCtxt))
               .withSignatureMethod(getSignatureMethod(msgCtxt))
               .withDigestMethod(getDigestMethod(msgCtxt))
               .withKeyIdentifierType(getKeyIdentifierType(msgCtxt))
+              .withRelayState(getSimpleOptionalProperty("relay-state", msgCtxt))
               .withBindingType(getBindingType(msgCtxt));
 
-      String authnRequestXmlString = sign_RSA(signConfiguration, msgCtxt);
-      msgCtxt.setVariable(getOutputVar(msgCtxt), authnRequestXmlString);
+      sign_RSA(signConfiguration, msgCtxt);
       return ExecutionResult.SUCCESS;
     } catch (IllegalStateException exc1) {
       setExceptionVariables(exc1, msgCtxt);

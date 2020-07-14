@@ -584,12 +584,14 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
     props.put("service-provider-name", "{providerName}");
+    props.put("relay-state", java.util.UUID.randomUUID().toString());
     props.put("issuer", "{issuer}");
     props.put("acs-url", "{acsUrl}");
     props.put("idp-id", idpId);
     props.put("idp-location", idpLocation);
     props.put("binding-type", "redirect");
-    props.put("output-variable", "output");
+    // the output-variable property is ignored for redirect binding
+    // props.put("output-variable", "output");
 
     Generate callout = new Generate(props);
 
@@ -603,28 +605,26 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     Object stacktrace = msgCtxt.getVariable("samlauthn_stacktrace");
     Assert.assertNull(stacktrace, method + "stacktrace");
 
-    String output = (String) msgCtxt.getVariable("output");
-    //System.out.printf("** Output:\n%s\n", output);
+    String signature = (String) msgCtxt.getVariable("samlauthn_Signature");
+    Assert.assertNotNull(signature, method + "Signature");
+    String sigAlg = (String) msgCtxt.getVariable("samlauthn_SigAlg");
+    Assert.assertNotNull(sigAlg, method + "SigAlg");
+    String samlRequest = (String) msgCtxt.getVariable("samlauthn_SAMLRequest");
+    Assert.assertNotNull(samlRequest, method + "SAMLRequest");
 
-    // URL-decode the String
-    output = URLDecoder.decode(output, "UTF-8");
-    System.out.printf("** URL-Decoded:\n%s\n", output);
-    // base64-Decode the String into bytes
-    byte[] decoded = Base64.getDecoder().decode(output);
+    // base64-decode and inflate the SAML Request
+    byte[] decoded = Base64.getDecoder().decode(samlRequest);
     // Decompress the bytes
     byte[] decompressed = decompress(decoded);
-
     Document doc = docFromStream(new ByteArrayInputStream(decompressed));
 
-    // signature
-    NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
-    Assert.assertEquals(nl.getLength(), 1, method + "Signature element");
+    // AuthnRequest
+    NodeList nl = doc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "AuthnRequest");
+    Assert.assertEquals(nl.getLength(), 1, method + "AuthnRequest element");
 
-    // SignatureMethod exists
-    nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "SignatureMethod");
-    Assert.assertEquals(nl.getLength(), 1, method + "SignatureMethod element");
-    Element element = (Element) nl.item(0);
-    String signatureMethodAlgorithm = element.getAttribute("Algorithm");
-    Assert.assertNotNull(signatureMethodAlgorithm);
+    // AuthnRequest
+    nl = doc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer");
+    Assert.assertEquals(nl.getLength(), 1, method + "Issuer element");
+
   }
 }
