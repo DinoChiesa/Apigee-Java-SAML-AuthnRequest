@@ -26,12 +26,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
-import java.security.cert.CertificateEncodingException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -46,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
-import javax.naming.InvalidNameException;
-import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.DigestMethod;
 import javax.xml.crypto.dsig.Reference;
@@ -55,14 +51,12 @@ import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.crypto.dsig.SignedInfo;
 import javax.xml.crypto.dsig.Transform;
 import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
 import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -85,7 +79,6 @@ import org.bouncycastle.pkcs.PKCSException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 public class Generate extends SamlAuthnCalloutBase implements Execution {
 
@@ -136,7 +129,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     }
   }
 
-  private void sign_RSA(SignConfiguration signConfiguration, MessageContext msgCtxt) throws Exception {
+  private void sign_RSA(SignConfiguration signConfiguration, MessageContext msgCtxt)
+      throws Exception {
     // 0. validate that the cert signs the public key that corresponds to the private key
     RSAPublicKey certPublicKey = (RSAPublicKey) signConfiguration.certificate.getPublicKey();
     final byte[] certModulus = certPublicKey.getModulus().toByteArray();
@@ -169,10 +163,12 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       authnRequest.setAttribute("ForceAuthn", "true");
     }
     if (signConfiguration.consumerServiceIndex != null) {
-      authnRequest.setAttribute("AssertionConsumerServiceIndex", signConfiguration.consumerServiceIndex);
+      authnRequest.setAttribute(
+          "AssertionConsumerServiceIndex", signConfiguration.consumerServiceIndex);
     }
     if (signConfiguration.consumingServiceIndex != null) {
-      authnRequest.setAttribute("AssertionConsumingServiceIndex", signConfiguration.consumingServiceIndex);
+      authnRequest.setAttribute(
+          "AssertionConsumingServiceIndex", signConfiguration.consumingServiceIndex);
     }
 
     // 3. Optional elements
@@ -245,9 +241,9 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     // 5. get signing method URI
     String signatureMethodUri =
         ((signConfiguration.signingMethod != null)
-         && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
-        ? "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
-        : "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
+                && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
+            ? "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"
+            : "http://www.w3.org/2000/09/xmldsig#rsa-sha1";
 
     // 6. export the XML itself
     msgCtxt.setVariable(varName("UnsignedRequest"), getXmlString(doc));
@@ -273,9 +269,10 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       // It does not say if other signature methods should or may be supported.
       // This implementation does not support DSA signatures.
       String signatureAlgorithm =
-        ((signConfiguration.signingMethod != null)
-         && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
-        ? "SHA256WithRSA" : "SHA1WithRSA";
+          ((signConfiguration.signingMethod != null)
+                  && (signConfiguration.signingMethod.toLowerCase().equals("rsa-sha256")))
+              ? "SHA256WithRSA"
+              : "SHA1WithRSA";
 
       Signature signature = Signature.getInstance(signatureAlgorithm);
       signature.initSign(configPrivateKey);
@@ -291,54 +288,54 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       // RelayState
       if (signConfiguration.urlEncodeOutput) {
         msgCtxt.setVariable(varName("SAMLRequest"), encodedRequest);
-        msgCtxt.setVariable(varName("Signature"), URLEncoder.encode(base64EncodedSignature, "UTF-8"));
+        msgCtxt.setVariable(
+            varName("Signature"), URLEncoder.encode(base64EncodedSignature, "UTF-8"));
         msgCtxt.setVariable(varName("SigAlg"), URLEncoder.encode(signatureMethodUri, "UTF-8"));
-        if (signConfiguration.relayState!= null)
+        if (signConfiguration.relayState != null)
           msgCtxt.setVariable(varName("RelayState"), encodedRelayState);
-      }
-      else {
+      } else {
         msgCtxt.setVariable(varName("SAMLRequest"), compressedAndBase64EncodedRequest);
         msgCtxt.setVariable(varName("Signature"), base64EncodedSignature);
         msgCtxt.setVariable(varName("SigAlg"), signatureMethodUri);
-        if (signConfiguration.relayState!= null)
+        if (signConfiguration.relayState != null)
           msgCtxt.setVariable(varName("RelayState"), signConfiguration.relayState);
       }
 
-    }
-    else {
+    } else {
       // 5. set up the ds:Reference
       String digestMethodUri =
-        ((signConfiguration.digestMethod != null)
-         && (signConfiguration.digestMethod.toLowerCase().equals("sha256")))
-        ? DigestMethod.SHA256
-        : DigestMethod.SHA1;
+          ((signConfiguration.digestMethod != null)
+                  && (signConfiguration.digestMethod.toLowerCase().equals("sha256")))
+              ? DigestMethod.SHA256
+              : DigestMethod.SHA1;
 
       XMLSignatureFactory signatureFactory = XMLSignatureFactory.getInstance("DOM");
       DigestMethod digestMethod = signatureFactory.newDigestMethod(digestMethodUri, null);
 
       List<Transform> transforms =
-        Arrays.asList(
-                      signatureFactory.newTransform(
-                                                    "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
-                      signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
+          Arrays.asList(
+              signatureFactory.newTransform(
+                  "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
+              signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
 
       List<Reference> references = new ArrayList<Reference>();
       references.add(
-                     signatureFactory.newReference("#" + bodyId, digestMethod, transforms, null, null));
+          signatureFactory.newReference("#" + bodyId, digestMethod, transforms, null, null));
 
       // 6. add <SignatureMethod Algorithm="..."?>
-      SignatureMethod signatureMethod = signatureFactory.newSignatureMethod(signatureMethodUri, null);
+      SignatureMethod signatureMethod =
+          signatureFactory.newSignatureMethod(signatureMethodUri, null);
 
       // 7. c14n method
       CanonicalizationMethod canonicalizationMethod =
-        signatureFactory.newCanonicalizationMethod(
-                                                   CanonicalizationMethod.EXCLUSIVE, (C14NMethodParameterSpec) null);
+          signatureFactory.newCanonicalizationMethod(
+              CanonicalizationMethod.EXCLUSIVE, (C14NMethodParameterSpec) null);
 
       // 8. get the SignedInfo
       DOMSignContext signingContext =
-        new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
+          new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
       SignedInfo signedInfo =
-        signatureFactory.newSignedInfo(canonicalizationMethod, signatureMethod, references);
+          signatureFactory.newSignedInfo(canonicalizationMethod, signatureMethod, references);
       KeyInfoFactory kif = signatureFactory.getKeyInfoFactory();
 
       // 9. set up the KeyInfo
@@ -355,7 +352,7 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
         Element x509Data = doc.createElementNS(Namespaces.XMLDSIG, "X509Data");
         Element x509Certificate = doc.createElementNS(Namespaces.XMLDSIG, "X509Certificate");
         x509Certificate.setTextContent(
-                                       Base64.getEncoder().encodeToString(signConfiguration.certificate.getEncoded()));
+            Base64.getEncoder().encodeToString(signConfiguration.certificate.getEncoded()));
         x509Data.appendChild(x509Certificate);
         javax.xml.crypto.XMLStructure structure = new javax.xml.crypto.dom.DOMStructure(x509Data);
         keyInfo = kif.newKeyInfo(java.util.Collections.singletonList(structure));
@@ -392,13 +389,14 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     }
   }
 
-  protected String getXmlString(Document doc) throws TransformerConfigurationException, TransformerException {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      Transformer transformer = TransformerFactory.newInstance().newTransformer();
-      transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-      transformer.transform(new DOMSource(doc), new StreamResult(baos));
-      String xmlString = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-      return xmlString;
+  protected String getXmlString(Document doc)
+      throws TransformerConfigurationException, TransformerException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    Transformer transformer = TransformerFactory.newInstance().newTransformer();
+    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+    transformer.transform(new DOMSource(doc), new StreamResult(baos));
+    String xmlString = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+    return xmlString;
   }
 
   private static RSAPrivateKey readKey(String privateKeyPemString, String password)
@@ -517,8 +515,7 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
   }
 
   protected BindingType getBindingType(MessageContext msgCtxt) {
-    String value = (String) getSimpleOptionalProperty("binding-type", msgCtxt);
-    if (value == null) return BindingType.HTTP_POST;
+    String value = (String) getSimpleRequiredProperty("binding-type", msgCtxt);
     value = value.trim().toUpperCase();
     if (!value.startsWith("HTTP-")) {
       if (value.startsWith("HTTP")) {
@@ -551,27 +548,30 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     try {
       SignConfiguration signConfiguration =
           new SignConfiguration()
+              .withBindingType(getBindingType(msgCtxt))
               .withKey(getPrivateKey(msgCtxt))
               .withCertificate(getCertificate(msgCtxt))
-        .withServiceProviderName(getSimpleRequiredProperty("service-provider-name", msgCtxt))
-        .withDestination(getSimpleRequiredProperty("destination", msgCtxt))
-        .withAcsUrl(getSimpleRequiredProperty("acs-url", msgCtxt))
+              .withServiceProviderName(getSimpleRequiredProperty("service-provider-name", msgCtxt))
+              .withDestination(getSimpleRequiredProperty("destination", msgCtxt))
+              .withAcsUrl(getSimpleRequiredProperty("acs-url", msgCtxt))
               .withForceAuthn(getForceAuthn(msgCtxt))
-        .withUrlEncodeOutput(getUrlEncodeOutput(msgCtxt))
-        .withIssuer(getSimpleRequiredProperty("issuer", msgCtxt))
+              .withUrlEncodeOutput(getUrlEncodeOutput(msgCtxt))
+              .withIssuer(getSimpleRequiredProperty("issuer", msgCtxt))
               // .withSubject(getSubject(msgCtxt))
               .withNameIdFormat(getSimpleOptionalProperty("name-id-format", msgCtxt))
-              .withRequestedAuthnContext(getSimpleOptionalProperty("requested-authn-context", msgCtxt))
-        .withRequesterId(getSimpleOptionalProperty("requester-id", msgCtxt))
+              .withRequestedAuthnContext(
+                  getSimpleOptionalProperty("requested-authn-context", msgCtxt))
+              .withRequesterId(getSimpleOptionalProperty("requester-id", msgCtxt))
               .withIdpId(getSimpleOptionalProperty("idp-id", msgCtxt))
-        .withIdpLocation(getSimpleOptionalProperty("idp-location", msgCtxt))
+              .withIdpLocation(getSimpleOptionalProperty("idp-location", msgCtxt))
               .withSignatureMethod(getSignatureMethod(msgCtxt))
               .withDigestMethod(getDigestMethod(msgCtxt))
               .withKeyIdentifierType(getKeyIdentifierType(msgCtxt))
               .withRelayState(getSimpleOptionalProperty("relay-state", msgCtxt))
-              .withConsumerServiceIndex(getSimpleOptionalProperty("consumer-service-index", msgCtxt))
-              .withConsumingServiceIndex(getSimpleOptionalProperty("consuming-service-index", msgCtxt))
-              .withBindingType(getBindingType(msgCtxt));
+              .withConsumerServiceIndex(
+                  getSimpleOptionalProperty("consumer-service-index", msgCtxt))
+              .withConsumingServiceIndex(
+                  getSimpleOptionalProperty("consuming-service-index", msgCtxt));
 
       sign_RSA(signConfiguration, msgCtxt);
       return ExecutionResult.SUCCESS;

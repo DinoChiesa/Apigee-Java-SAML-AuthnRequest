@@ -1,6 +1,7 @@
 <JavaCallout name='Java-SAML-AuthnRequest-2'>
   <Properties>
     <Property name='output-variable'>authnrequest</Property>
+    <Property name='binding-type'>POST</Property>
     <Property name='private-key'>{my_private_key}</Property>
     <Property name='certificate'>{my_certificate}</Property>
     <Property name='issuer'>http://sp.example.com/demo1/metadata.php</Property>
@@ -11,5 +12,5 @@
     <Property name='idp-location'>https://idp.example.com/idp/saml2/sso</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714-2.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200714-3.jar</ResourceURL>
 </JavaCallout>

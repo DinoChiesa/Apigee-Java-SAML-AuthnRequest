@@ -33,6 +33,28 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
   }
 
   @Test
+  public void missingBindingType() throws Exception {
+    String method = "missingBindingType() ";
+    String expectedError = "binding-type resolves to an empty string";
+
+    Map<String, String> props = new HashMap<String, String>();
+
+    Generate callout = new Generate(props);
+
+    // execute and retrieve output
+    ExecutionResult actualResult = callout.execute(msgCtxt, exeCtxt);
+    Assert.assertEquals(actualResult, ExecutionResult.ABORT, "result not as expected");
+    Object exception = msgCtxt.getVariable("samlauthn_exception");
+    Assert.assertNotNull(exception, method + "exception");
+    Object errorOutput = msgCtxt.getVariable("samlauthn_error");
+    Assert.assertNotNull(errorOutput, "errorOutput");
+    // System.out.printf("expected error: %s\n", errorOutput);
+    Assert.assertEquals(errorOutput, expectedError, "error not as expected");
+    Object stacktrace = msgCtxt.getVariable("samlauthn_stacktrace");
+    Assert.assertNull(stacktrace, method + "stacktrace");
+  }
+
+  @Test
   public void missingPrivateKey() throws Exception {
     String method = "missingPrivateKey() ";
     String expectedError = "private-key resolves to an empty string";
@@ -40,6 +62,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     Map<String, String> props = new HashMap<String, String>();
 
     Generate callout = new Generate(props);
+    props.put("binding-type", "POST");
 
     // execute and retrieve output
     ExecutionResult actualResult = callout.execute(msgCtxt, exeCtxt);
@@ -62,6 +85,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     // props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("private-key-password", "Secret123");
     props.put("output-variable", "output");
@@ -99,6 +123,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     // props.put("destination", "{destination}");
@@ -141,6 +166,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -183,6 +209,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -225,6 +252,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -265,6 +293,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -346,6 +375,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -402,6 +432,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -469,6 +500,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -508,6 +540,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "POST");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -580,6 +613,7 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
+    props.put("binding-type", "redirect");
     props.put("private-key", "{my-private-key}");
     props.put("certificate", "{my-certificate}");
     props.put("destination", "{destination}");
@@ -589,7 +623,6 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     props.put("acs-url", "{acsUrl}");
     props.put("idp-id", idpId);
     props.put("idp-location", idpLocation);
-    props.put("binding-type", "redirect");
     // the output-variable property is ignored for redirect binding
     // props.put("output-variable", "output");
 

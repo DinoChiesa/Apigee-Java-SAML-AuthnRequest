@@ -72,8 +72,7 @@ public abstract class SamlAuthnCalloutBase {
     return dest;
   }
 
-  protected String getSimpleOptionalProperty(String propName, MessageContext msgCtxt)
-       {
+  protected String getSimpleOptionalProperty(String propName, MessageContext msgCtxt) {
     String value = (String) this.properties.get(propName);
     if (value == null) {
       return null;

@@ -34,7 +34,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200714-2.jar. Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200714-3.jar. Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -71,7 +71,7 @@ Here's an example policy configuration:
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714-2.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200714-3.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -83,6 +83,7 @@ The available properties are:
 
 | name                    | description  |
 | ----------------------- | ------------ |
+| binding-type            | required. Either "Redirect" or "POST". Case insensitive.                                  |
 | private-key             | required. the PEM-encoded RSA private key. You can use a variable reference here as shown above. Probably you want to read this from encrypted KVM. |
 | certificate             | required. The certificate matching the private key. In PEM form.                          |
 | issuer                  | required. The URL for the Issuer.                                                         |
@@ -99,7 +100,6 @@ The available properties are:
 | idp-location            | optional. the ID for the IDP, often a URL pointing to metadata.                           |
 | name-id-format          | optional. Either 'transient' or 'email'.                                                  |
 | requested-authn-context | optional.  The only value supported is "password". Causes an RequestedAuthnContext element to be included in the emitted AuthnRequest. |
-| binding-type            | optional. Either "Redirect" or "POST". Defaults to "POST". Case insensitive.              |
 | relay-state             | optional. Applies only to `binding-type` of Redirect.                                     |
 | url-encode-output       | optional. true/false.  Applies only to Redirect `binding-type`. If true, the policy URL-encodes the various outputs.                     |
 | consumer-service-index  | optional. A numeric value, based at 0. applied as `AssertionConsumerServiceIndex` attribute on the AuthnRequest. |
@@ -137,17 +137,17 @@ Regarding `key-identifier-type`, these are the options:
 
 <table>
   <tr>
-    <th><code>value</code></th>
-    <th>example Key information in the resulting XML document</th>
+    <th>value</th>
+    <th>format of Key information in the resulting XML document</th>
   </tr>
   <tr>
     <td><code>x509_cert_direct</code></td>
     <td><pre>
   &lt;KeyInfo&gt;
-     &lt;X509Data&gt;
-       &lt;X509Certificate&gt;MIICAjCCAWu....7BQnulQ=&lt;/X509Certificate&gt;
-     &lt;/X509Data&gt;
-   &lt;/KeyInfo&gt;
+    &lt;X509Data&gt;
+      &lt;X509Certificate&gt;MIICAjCCAWu....7BQnulQ=&lt;/X509Certificate&gt;
+    &lt;/X509Data&gt;
+  &lt;/KeyInfo&gt;
 </pre></td>
   </tr>
   <tr>
@@ -164,7 +164,7 @@ Regarding `key-identifier-type`, these are the options:
 </pre></td>
   </tr>
 </table>
-  
+
 
 ## Example API Proxy Bundle
 
@@ -335,15 +335,15 @@ RelayState=rrt-5181747005327207520-b-gwo1-17079-37860156-1
 
 Each of those parameters can be used as query parameters in a redirect to the IDP signon URL. Be mindful of URL-encoding the parameter values when constructing the query string.
 
-You can paste these items into [the form here](https://www.samltool.com/validate_authn_req.php) to verify that the signed AuthnRequest is valid.  If you do that you can find the PEM-encoding of the certificate used for this signature in the API Proxy, in [AM-KeyAndCert.xml](./bundle/apiproxy/policies/AM-KeyAndCert.xml).
+You can paste these items into [the form at samltool.com](https://www.samltool.com/validate_authn_req.php) to verify that the signed AuthnRequest is valid.  If you do that you can find the PEM-encoding of the certificate used for this signature in the API Proxy, in [AM-KeyAndCert.xml](./bundle/apiproxy/policies/AM-KeyAndCert.xml).
 
 ## About Keys
 
-There is a private RSA key and a corresponding certificate embedded in the API
-Proxy. You should not use those for your own purposes. Create your
-own. Self-signed is fine for testing purposes. You can
-do it with openssl. Creating a privatekey, a certificate signing request, and a
-certificate, is as easy as 1, 2, 3:
+The API proxy embeds a private RSA key and a corresponding certificate. These
+are present for demonstration purposes.  You should not use that key and
+certificate for your own purposes. Create your own. Self-signed is fine for
+testing purposes. You can do it with openssl. Creating a privatekey, a
+certificate signing request, and a certificate, is as easy as 1, 2, 3:
 
 ```
  openssl genpkey  -algorithm rsa -pkeyopt  rsa_keygen_bits:2048 -out privatekey.pem
@@ -351,6 +351,8 @@ certificate, is as easy as 1, 2, 3:
  openssl x509 -req -days 3650 -in domain.csr -signkey privatekey.pem -out domain.cert
 ```
 
+For production use, you should provision your own key and certificate, and you
+should store them in an encrypted store like th encrypted KVM.
 
 ## Bugs
 
