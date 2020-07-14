@@ -143,24 +143,24 @@ Regarding `key-identifier-type`, these are the options:
   <tr>
     <td><code>x509_cert_direct</code></td>
     <td><pre>
-  <KeyInfo>
-     <X509Data>
-       <X509Certificate>MIICAjCCAWu....7BQnulQ=</X509Certificate>
-     </X509Data>
-   </KeyInfo>
+  &lt;KeyInfo&gt;
+     &lt;X509Data&gt;
+       &lt;X509Certificate&gt;MIICAjCCAWu....7BQnulQ=&lt;/X509Certificate&gt;
+     &lt;/X509Data&gt;
+   &lt;/KeyInfo&gt;
 </pre></td>
   </tr>
   <tr>
     <td><code>rsa_key_value</code></td>
     <td><pre>
-  <KeyInfo>
-    <KeyValue>
-       <RSAKeyValue>
-         <Modulus>B6PenDyT58LjZlG6LYD27IFCh1yO+4...yCP9YNDtsLZftMLoQ==</Modulus>
-         <Exponent>AQAB</Exponent>
-       </RSAKeyValue>
-     </KeyValue>
-   </KeyInfo>
+  &lt;KeyInfo&gt;
+    &lt;KeyValue&gt;
+       &lt;RSAKeyValue&gt;
+         &lt;Modulus&gt;B6PenDyT58LjZlG6LYD27IFCh1yO+4...yCP9YNDtsLZftMLoQ==&lt;/Modulus&gt;
+         &lt;Exponent&gt;AQAB&lt;/Exponent&gt;
+       &lt;/RSAKeyValue&gt;
+     &lt;/KeyValue&gt;
+   &lt;/KeyInfo&gt;
 </pre></td>
   </tr>
 </table>
