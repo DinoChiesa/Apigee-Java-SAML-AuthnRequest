@@ -164,9 +164,15 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     Element issuer = (Element) nodes.item(0);
     Element current = issuer;
 
-    // 2. conditionally add ForceAuthn
+    // 2. conditionally add ForceAuthn, ConsumerServiceIndex, ConsumingServiceIndex
     if (signConfiguration.forceAuthn) {
       authnRequest.setAttribute("ForceAuthn", "true");
+    }
+    if (signConfiguration.consumerServiceIndex != null) {
+      authnRequest.setAttribute("AssertionConsumerServiceIndex", signConfiguration.consumerServiceIndex);
+    }
+    if (signConfiguration.consumingServiceIndex != null) {
+      authnRequest.setAttribute("AssertionConsumingServiceIndex", signConfiguration.consumingServiceIndex);
     }
 
     // 3. Optional elements
@@ -563,6 +569,8 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
               .withDigestMethod(getDigestMethod(msgCtxt))
               .withKeyIdentifierType(getKeyIdentifierType(msgCtxt))
               .withRelayState(getSimpleOptionalProperty("relay-state", msgCtxt))
+              .withConsumerServiceIndex(getSimpleOptionalProperty("consumer-service-index", msgCtxt))
+              .withConsumingServiceIndex(getSimpleOptionalProperty("consuming-service-index", msgCtxt))
               .withBindingType(getBindingType(msgCtxt));
 
       sign_RSA(signConfiguration, msgCtxt);

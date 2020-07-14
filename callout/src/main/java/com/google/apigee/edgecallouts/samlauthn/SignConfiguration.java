@@ -24,6 +24,8 @@ public class SignConfiguration {
   public String digestMethod;
   public KeyIdentifierType keyIdentifierType;
   public BindingType bindingType;
+  public String consumerServiceIndex;
+  public String consumingServiceIndex;
 
   public SignConfiguration() {
     keyIdentifierType = KeyIdentifierType.X509_CERT_DIRECT;
@@ -124,4 +126,13 @@ public class SignConfiguration {
     this.urlEncodeOutput = urlEncodeOutput;
     return this;
   }
+  public SignConfiguration withConsumerServiceIndex(String index) {
+    this.consumerServiceIndex = index;
+    return this;
+  }
+  public SignConfiguration withConsumingServiceIndex(String index) {
+    this.consumingServiceIndex = index;
+    return this;
+  }
+
 }

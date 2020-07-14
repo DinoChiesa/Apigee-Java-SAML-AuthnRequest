@@ -34,7 +34,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200714-1.jar. Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200714-2.jar. Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -71,7 +71,7 @@ Here's an example policy configuration:
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714-1.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200714-2.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -80,28 +80,30 @@ This policy will produce a SAML AuthnRequest document and embed a Signature elem
 
 The available properties are:
 
-| name                  | description  |
-| --------------------- | ------------ |
-| private-key           | required. the PEM-encoded RSA private key. You can use a variable reference here as shown above. Probably you want to read this from encrypted KVM. |
-| certificate           | required. The certificate matching the private key. In PEM form.                          |
-| issuer                | required. The URL for the Issuer.                                                         |
-| destination           | required. The URL for the Destination.                                                    |
-| service-provider-name | required. The name for the Service provider.                                              |
-| acs-url               | required. The URL for the AssertionConsumerService.                                       |
-| private-key-password  | optional. The password for the key, if it is encrypted.                                   |
-| force-authn           | optional. true/false. Defaults false.                                                     |
-| key-identifier-type   | optional. One of {`X509_CERT_DIRECT`, or `RSA_KEY_VALUE`}.  See below for details. Applies only to POST `binding-type`. |
-| signature-method      | optional. Takes value rsa-sha1 or rsa-sha256. Defaults to rsa-sha1.                       |
-| digest-method         | optional. Takes value sha1 or sha256. Defaults to sha1. Aplpies only to POST `binding-type`. |
-| requester-id          | optional. the ID for the requester, often a URL. Causes a Scoping element with a RequesterID child to be included in the AuthnRequest. |
-| idp-id                | optional. the ID for the IDP, often a URL pointing to metadata. Causes a Scoping element with an IDPList child to be included in the AuthnRequest. |
-| idp-location          | optional. the ID for the IDP, often a URL pointing to metadata.                           |
-| name-id-format        | optional. Either 'transient' or 'email'.                                                  |
+| name                    | description  |
+| ----------------------- | ------------ |
+| private-key             | required. the PEM-encoded RSA private key. You can use a variable reference here as shown above. Probably you want to read this from encrypted KVM. |
+| certificate             | required. The certificate matching the private key. In PEM form.                          |
+| issuer                  | required. The URL for the Issuer.                                                         |
+| destination             | required. The URL for the Destination.                                                    |
+| service-provider-name   | required. The name for the Service provider.                                              |
+| acs-url                 | required. The URL for the AssertionConsumerService.                                       |
+| private-key-password    | optional. The password for the key, if it is encrypted.                                   |
+| force-authn             | optional. true/false. Defaults false.                                                     |
+| key-identifier-type     | optional. One of {`X509_CERT_DIRECT`, or `RSA_KEY_VALUE`}.  See below for details. Applies only to POST `binding-type`. |
+| signature-method        | optional. Takes value rsa-sha1 or rsa-sha256. Defaults to rsa-sha1.                       |
+| digest-method           | optional. Takes value sha1 or sha256. Defaults to sha1. Aplpies only to POST `binding-type`. |
+| requester-id            | optional. the ID for the requester, often a URL. Causes a Scoping element with a RequesterID child to be included in the AuthnRequest. |
+| idp-id                  | optional. the ID for the IDP, often a URL pointing to metadata. Causes a Scoping element with an IDPList child to be included in the AuthnRequest. |
+| idp-location            | optional. the ID for the IDP, often a URL pointing to metadata.                           |
+| name-id-format          | optional. Either 'transient' or 'email'.                                                  |
 | requested-authn-context | optional.  The only value supported is "password". Causes an RequestedAuthnContext element to be included in the emitted AuthnRequest. |
-| binding-type          | optional. Either "Redirect" or "POST". Defaults to "POST"                                 |
-| relay-state           | optional. Applies only to `binding-type` of Redirect.                                     |
-| url-encode-output     | optional. true/false.  Applies only to Redirect `binding-type`. If true, the policy URL-encodes the various outputs.                     |
-| output-variable       | optional. Applies only to POST `binding-type`. Specifies the variable name in which to write the signed XML. Defaults to message.content |
+| binding-type            | optional. Either "Redirect" or "POST". Defaults to "POST"                                 |
+| relay-state             | optional. Applies only to `binding-type` of Redirect.                                     |
+| url-encode-output       | optional. true/false.  Applies only to Redirect `binding-type`. If true, the policy URL-encodes the various outputs.                     |
+| consumer-service-index  | optional. A numeric value, based at 0. applied as `AssertionConsumerServiceIndex` attribute on the AuthnRequest. |
+| consuming-service-index | optional. A numeric value, based at 0. applied as `AssertionConsumingServiceIndex` attribute on the AuthnRequest. |
+| output-variable         | optional. Applies only to POST `binding-type`. Specifies the variable name in which to write the signed XML. Defaults to message.content |
 
 For all properties, the curly braces indicate a reference to a context variable.
 You can also omit the curlies to "hard-code" a value.
