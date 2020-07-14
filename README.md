@@ -144,7 +144,8 @@ Regarding `key-identifier-type`, these are the options:
 
 See [the example API proxy included here](./bundle) for a working example of policy configurations.
 
-Deploy the API Proxy to an organization and environment using a tool like [importAndDeploy.js](https://github.com/DinoChiesa/apigee-edge-js/blob/master/examples/importAndDeploy.js)
+Deploy the API Proxy to an organization and environment using a tool like
+[importAndDeploy.js](https://github.com/DinoChiesa/apigee-edge-js-examples/blob/main/importAndDeploy.js)
 
 There are some sample SOAP request documents included in this repo that you can use for demonstrations.
 
