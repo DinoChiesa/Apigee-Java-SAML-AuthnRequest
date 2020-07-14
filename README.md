@@ -99,7 +99,7 @@ The available properties are:
 | idp-location            | optional. the ID for the IDP, often a URL pointing to metadata.                           |
 | name-id-format          | optional. Either 'transient' or 'email'.                                                  |
 | requested-authn-context | optional.  The only value supported is "password". Causes an RequestedAuthnContext element to be included in the emitted AuthnRequest. |
-| binding-type            | optional. Either "Redirect" or "POST". Defaults to "POST"                                 |
+| binding-type            | optional. Either "Redirect" or "POST". Defaults to "POST". Case insensitive.              |
 | relay-state             | optional. Applies only to `binding-type` of Redirect.                                     |
 | url-encode-output       | optional. true/false.  Applies only to Redirect `binding-type`. If true, the policy URL-encodes the various outputs.                     |
 | consumer-service-index  | optional. A numeric value, based at 0. applied as `AssertionConsumerServiceIndex` attribute on the AuthnRequest. |
@@ -109,15 +109,12 @@ The available properties are:
 For all properties, the curly braces indicate a reference to a context variable.
 You can also omit the curlies to "hard-code" a value.
 
-For outputs, there are two options 
-
+For outputs, there are two options :
 
 <table>
   <tr>
-    <th>
-`binding-type`
-    </th>
-    <th>Callout behavior and result </th>
+    <th><code>binding-type</code></th>
+    <th>Callout behavior and result</th>
   </tr>
   <tr>
     <td>POST</td>
@@ -125,7 +122,7 @@ For outputs, there are two options
   </tr>
   <tr>
     <td>Redirect</td>
-    <td>When the property `binding-type` is `redirect`, the callout policy will set four distinct output variables with strings:
+    <td>When the property <code>binding-type</code> is <code>redirect</code>, the callout policy will set four distinct output variables with strings:
       <ul>
         <li><code>samlauthn_SAMLRequest</code> - the unsigned AuthnRequest</li>
         <li><code>samlauthn_Signature</code> - the signature value</li>
@@ -138,17 +135,24 @@ For outputs, there are two options
 
 Regarding `key-identifier-type`, these are the options:
 
-* `x509_cert_direct` gives you this in the XML output:
-  ```xml
+<table>
+  <tr>
+    <th><code>value</code></th>
+    <th>example Key information in the resulting XML document</th>
+  </tr>
+  <tr>
+    <td><code>x509_cert_direct</code></td>
+    <td><pre>
   <KeyInfo>
      <X509Data>
        <X509Certificate>MIICAjCCAWu....7BQnulQ=</X509Certificate>
      </X509Data>
    </KeyInfo>
-  ```
-
-* `rsa_key_value` gives you this in the XML output:
-  ```xml
+</pre></td>
+  </tr>
+  <tr>
+    <td><code>rsa_key_value</code></td>
+    <td><pre>
   <KeyInfo>
     <KeyValue>
        <RSAKeyValue>
@@ -157,7 +161,10 @@ Regarding `key-identifier-type`, these are the options:
        </RSAKeyValue>
      </KeyValue>
    </KeyInfo>
-  ```
+</pre></td>
+  </tr>
+</table>
+  
 
 ## Example API Proxy Bundle
 
@@ -179,7 +186,7 @@ curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate1
 ```
 
 The result will be something like this:
-```
+```xml
 <samlp:AuthnRequest
     xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
     xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" AssertionConsumerServiceURL="https://sp.example.com/demo1/index.php?acs" Destination="https://idp.example.com/SSOService.php" ID="req-e1cb1e11-b5c8-405b-80a3-792d5cf95253" IssueInstant="2020-07-13T22:30:22Z" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" ProviderName="TestServiceProvider" Version="2.0">
@@ -220,7 +227,7 @@ Invoke:
 curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate2
 ```
 
-```
+```xml
 <samlp:AuthnRequest
     xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
     xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" AssertionConsumerServiceURL="https://sp.example.com/demo1/index.php?acs" Destination="https://idp.example.com/SSOService.php" ID="req-9a27848c-51cc-4e70-adba-e8812997a525" IssueInstant="2020-07-13T22:29:01Z" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" ProviderName="TestServiceProvider" Version="2.0">
@@ -264,7 +271,7 @@ Invoke:
 curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate3
 ```
 
-```
+```xml
 <samlp:AuthnRequest
     xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
     xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" AssertionConsumerServiceURL="https://sp.example.com/demo1/index.php?acs" Destination="https://idp.example.com/SSOService.php" ForceAuthn="true" ID="req-c81b99e3-a11e-47ab-b990-d105db08ec7a" IssueInstant="2020-07-14T16:00:17Z" ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" ProviderName="TestServiceProvider" Version="2.0">
