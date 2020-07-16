@@ -151,10 +151,11 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
             .replaceFirst("@@DESTINATION@@", signConfiguration.destination)
             .replaceFirst("@@ACS_URL@@", signConfiguration.acsUrl)
             .replaceFirst("@@ISSUER@@", signConfiguration.issuer)
-            .replaceFirst("@@PROTOCOL_BINDING@@",
-                          (signConfiguration.bindingType == BindingType.HTTP_REDIRECT) ?
-                          Constants.BINDING_HTTP_REDIRECT : Constants.BINDING_HTTP_POST);
-
+            .replaceFirst(
+                "@@PROTOCOL_BINDING@@",
+                (signConfiguration.bindingType == BindingType.HTTP_REDIRECT)
+                    ? Constants.BINDING_HTTP_REDIRECT
+                    : Constants.BINDING_HTTP_POST);
 
     msgCtxt.setVariable(varName("issuer"), signConfiguration.issuer);
     msgCtxt.setVariable(varName("acs-url"), signConfiguration.acsUrl);
