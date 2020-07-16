@@ -208,6 +208,9 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
 
     // 3c. conditionally include RequestedAuthnContext/AuthnContextClassRef
     if (signConfiguration.requestedAuthnContext != null) {
+      // SAML allows many different AuthnContextClass options.
+      // see http://docs.oasis-open.org/security/saml/v2.0/saml-authn-context-2.0-os.pdf
+      // This callout supports only PasswordProtectedTransport.
       if (!signConfiguration.requestedAuthnContext.equals("password")) {
         throw new IllegalStateException("that value for RequestedAuthnContext not supported");
       }

@@ -4,9 +4,9 @@
     <Property name='binding-type'>POST</Property>
     <Property name='private-key'>{my_private_key}</Property>
     <Property name='certificate'>{my_certificate}</Property>
-    <Property name='issuer'>http://sp.example.com/demo1/metadata.php</Property>
-    <Property name='acs-url'>https://sp.example.com/demo1/index.php?acs</Property>
-    <Property name='destination'>https://idp.example.com/SSOService.php</Property>
+    <Property name='issuer'>{issuer}</Property>
+    <Property name='acs-url'>{axs-url}</Property>
+    <Property name='destination'>{destination}</Property>
     <Property name='service-provider-name'>TestServiceProvider</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
