@@ -9,7 +9,11 @@
   <FaultRules/>
 
   <PreFlow name="PreFlow">
-      <Request/>
+    <Request>
+        <Step>
+          <Name>AM-Demo-Information</Name>
+        </Step>
+    </Request>
       <Response>
       </Response>
   </PreFlow>
@@ -26,9 +30,6 @@
       </Request>
       <Response>
         <Step>
-          <Name>AM-KeyAndCert</Name>
-        </Step>
-        <Step>
           <Name>Java-SAML-AuthnRequest-1</Name>
         </Step>
         <Step>
@@ -42,9 +43,6 @@
       <Request>
       </Request>
       <Response>
-        <Step>
-          <Name>AM-KeyAndCert</Name>
-        </Step>
         <Step>
           <Name>Java-SAML-AuthnRequest-2</Name>
         </Step>
@@ -60,9 +58,6 @@
       </Request>
       <Response>
         <Step>
-          <Name>AM-KeyAndCert</Name>
-        </Step>
-        <Step>
           <Name>Java-SAML-AuthnRequest-3</Name>
         </Step>
         <Step>
@@ -77,9 +72,6 @@
       </Request>
       <Response>
         <Step>
-          <Name>AM-KeyAndCert</Name>
-        </Step>
-        <Step>
           <Name>Java-SAML-AuthnRequest-4</Name>
         </Step>
         <Step>
@@ -87,6 +79,17 @@
         </Step>
       </Response>
       <Condition>(proxy.pathsuffix ~ "/generate4") and (request.verb = "GET")</Condition>
+    </Flow>
+
+    <Flow name='cert'>
+      <Request>
+      </Request>
+      <Response>
+        <Step>
+          <Name>AM-Response-Cert-and-Key</Name>
+        </Step>
+      </Response>
+      <Condition>(proxy.pathsuffix ~ "/cert") and (request.verb = "GET")</Condition>
     </Flow>
 
     <Flow name='unknown'>

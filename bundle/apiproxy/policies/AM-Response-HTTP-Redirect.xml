@@ -8,6 +8,9 @@ SigAlg={samlauthn_SigAlg}
 Signature={samlauthn_Signature}
 
 RelayState={samlauthn_RelayState}
+
+issuer (SP EntityID): {issuer}
+destination: {destination}
 ]]></Payload>
   </Set>
 </AssignMessage>

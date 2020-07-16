@@ -1,4 +1,24 @@
-<AssignMessage name='AM-KeyAndCert'>
+<AssignMessage name='AM-Demo-Information'>
+  <AssignVariable>
+    <Name>issuer</Name>
+    <Value>https://sp.example.com/demo1/metadata.php</Value>
+  </AssignVariable>
+
+  <AssignVariable>
+    <Name>destination</Name>
+    <Value>https://idp.example.com/SSOService.php</Value>
+  </AssignVariable>
+
+  <AssignVariable>
+    <Name>acs-url</Name>
+    <Value>https://sp.example.com/demo1/index.php?acs</Value>
+  </AssignVariable>
+
+  <AssignVariable>
+    <Name>requester-id</Name>
+    <Value>https://whatever.example.com/saml/metadata</Value>
+  </AssignVariable>
+
   <AssignVariable>
     <Name>my_certificate</Name>
     <Value>

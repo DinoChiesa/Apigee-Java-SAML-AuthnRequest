@@ -3,13 +3,13 @@
     <Property name='binding-type'>redirect</Property>
     <Property name='private-key'>{my_private_key}</Property>
     <Property name='certificate'>{my_certificate}</Property>
-    <Property name='issuer'>https://sp.example.com/demo1/metadata.php</Property>
-    <Property name='acs-url'>https://sp.example.com/demo1/index.php?acs</Property>
-    <Property name='destination'>https://idp.example.com/SSOService.php</Property>
+    <Property name='issuer'>{issuer}</Property>
+    <Property name='acs-url'>{acs-url}</Property>
+    <Property name='destination'>{destination}</Property>
     <Property name='service-provider-name'>TestServiceProvider</Property>
     <Property name='force-authn'>true</Property>
     <Property name='signature-method'>rsa-sha1</Property>
-    <Property name='requester-id'>https://whatever.example.com/saml/metadata</Property>
+    <Property name='requester-id'>{requester-id}</Property>
     <Property name='relay-state'>{messageid}</Property>
     <Property name='url-encode-output'>false</Property>
   </Properties>

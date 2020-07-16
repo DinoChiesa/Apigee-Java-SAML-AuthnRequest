@@ -1,0 +1,27 @@
+<AssignMessage name='AM-Response-Cert-and-Key'>
+  <AssignVariable>
+    <Name>newline</Name>
+    <Value>
+</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>regex</Name>
+    <Value>\n\s+</Value>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>fixedup_cert</Name>
+    <Template>{replaceAll(my_certificate,regex,newline)}</Template>
+  </AssignVariable>
+  <AssignVariable>
+    <Name>fixedup_key</Name>
+    <Template>{replaceAll(my_private_key,regex,newline)}</Template>
+  </AssignVariable>
+  <Set>
+    <Payload contentType='text/plain'><![CDATA[
+{fixedup_cert}
+
+{fixedup_key}
+
+]]></Payload>
+  </Set>
+</AssignMessage>
