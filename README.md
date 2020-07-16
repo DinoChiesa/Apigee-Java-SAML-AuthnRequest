@@ -34,7 +34,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200714-3.jar. Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200716.jar. Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -71,7 +71,7 @@ Here's an example policy configuration:
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714-3.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200716.jar</ResourceURL>
 </JavaCallout>
 ```
 

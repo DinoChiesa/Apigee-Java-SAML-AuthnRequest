@@ -150,7 +150,15 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
             .replaceFirst("@@ISSUE_INSTANT@@", getISOTimestamp(0))
             .replaceFirst("@@DESTINATION@@", signConfiguration.destination)
             .replaceFirst("@@ACS_URL@@", signConfiguration.acsUrl)
-            .replaceFirst("@@ISSUER@@", signConfiguration.issuer);
+            .replaceFirst("@@ISSUER@@", signConfiguration.issuer)
+            .replaceFirst("@@PROTOCOL_BINDING@@",
+                          (signConfiguration.bindingType == BindingType.HTTP_REDIRECT) ?
+                          Constants.BINDING_HTTP_REDIRECT : Constants.BINDING_HTTP_POST);
+
+
+    msgCtxt.setVariable(varName("issuer"), signConfiguration.issuer);
+    msgCtxt.setVariable(varName("acs-url"), signConfiguration.acsUrl);
+    msgCtxt.setVariable(varName("destination"), signConfiguration.destination);
 
     Document doc = XmlUtils.parseXml(samlAuthnRequest);
     Element authnRequest = doc.getDocumentElement();

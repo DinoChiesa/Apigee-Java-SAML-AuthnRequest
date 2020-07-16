@@ -10,5 +10,5 @@
     <Property name='service-provider-name'>TestServiceProvider</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714-3.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200716.jar</ResourceURL>
 </JavaCallout>

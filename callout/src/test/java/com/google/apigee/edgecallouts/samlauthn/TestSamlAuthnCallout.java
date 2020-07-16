@@ -320,14 +320,21 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
 
     Document doc = docFromStream(new ByteArrayInputStream(output.getBytes(StandardCharsets.UTF_8)));
 
+    // AuthnRequest
+    NodeList nl = doc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "AuthnRequest");
+    Assert.assertEquals(nl.getLength(), 1, method + "AuthnRequest element");
+    Element element = (Element) nl.item(0);
+    String protocolBinding = element.getAttribute("ProtocolBinding");
+    Assert.assertEquals(protocolBinding, Constants.BINDING_HTTP_POST);
+
     // signature
-    NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+    nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
     Assert.assertEquals(nl.getLength(), 1, method + "Signature element");
 
     // SignatureMethod (default)
     nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "SignatureMethod");
     Assert.assertEquals(nl.getLength(), 1, method + "SignatureMethod element");
-    Element element = (Element) nl.item(0);
+    element = (Element) nl.item(0);
     String signatureMethodAlgorithm = element.getAttribute("Algorithm");
     Assert.assertEquals(signatureMethodAlgorithm, "http://www.w3.org/2000/09/xmldsig#rsa-sha1");
 
@@ -654,10 +661,13 @@ public class TestSamlAuthnCallout extends CalloutTestBase {
     // AuthnRequest
     NodeList nl = doc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:protocol", "AuthnRequest");
     Assert.assertEquals(nl.getLength(), 1, method + "AuthnRequest element");
+    Element element = (Element) nl.item(0);
+    String protocolBinding = element.getAttribute("ProtocolBinding");
+    Assert.assertEquals(protocolBinding, Constants.BINDING_HTTP_REDIRECT);
 
-    // AuthnRequest
+    // Issuer
     nl = doc.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer");
     Assert.assertEquals(nl.getLength(), 1, method + "Issuer element");
-
   }
+
 }

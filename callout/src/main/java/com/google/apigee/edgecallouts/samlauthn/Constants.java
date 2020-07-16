@@ -26,7 +26,7 @@ public final class Constants {
     + "    ProviderName='@@SERVICE_PROVIDER_NAME@@'\n"
     + "    IssueInstant='@@ISSUE_INSTANT@@'\n"
     + "    Destination='@@DESTINATION@@'\n"
-    + "    ProtocolBinding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'\n"
+    + "    ProtocolBinding='@@PROTOCOL_BINDING@@'\n"
     + "    AssertionConsumerServiceURL='@@ACS_URL@@'>\n"
     + "  <saml:Issuer>@@ISSUER@@</saml:Issuer>\n"
     + "</samlp:AuthnRequest>\n";
@@ -45,6 +45,12 @@ public final class Constants {
 
   public final static String AUTHN_CONTEXT_CLASS_REF_PASSWORD =
     "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport";
+
+  public final static String BINDING_HTTP_REDIRECT =
+    "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect";
+
+  public final static String BINDING_HTTP_POST =
+    "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST";
 
   private Constants() { }
 

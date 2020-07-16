@@ -12,5 +12,5 @@
     <Property name='idp-location'>https://idp.example.com/idp/saml2/sso</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200714-3.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200716.jar</ResourceURL>
 </JavaCallout>
