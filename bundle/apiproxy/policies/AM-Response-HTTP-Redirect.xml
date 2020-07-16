@@ -9,8 +9,8 @@ Signature={samlauthn_Signature}
 
 RelayState={samlauthn_RelayState}
 
-issuer (SP EntityID): {issuer}
-destination: {destination}
+issuer (SP EntityID): {samlauthn_issuer}
+destination: {samlauthn_destination}
 ]]></Payload>
   </Set>
 </AssignMessage>
