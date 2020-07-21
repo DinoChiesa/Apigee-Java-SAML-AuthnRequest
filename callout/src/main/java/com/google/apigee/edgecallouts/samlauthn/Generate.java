@@ -326,9 +326,9 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
 
       List<Transform> transforms =
           Arrays.asList(
+              signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null),
               signatureFactory.newTransform(
-                  "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null),
-              signatureFactory.newTransform(Transform.ENVELOPED, (TransformParameterSpec) null));
+                  "http://www.w3.org/2001/10/xml-exc-c14n#", (TransformParameterSpec) null));
 
       List<Reference> references = new ArrayList<Reference>();
       references.add(

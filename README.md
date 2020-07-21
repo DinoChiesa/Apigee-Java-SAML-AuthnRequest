@@ -37,7 +37,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200716.jar. Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200720.jar. Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -74,7 +74,7 @@ Here's an example policy configuration:
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
   <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200716.jar</ResourceURL>
+  <ResourceURL>java://apigee-samlauthn-20200720.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -201,8 +201,8 @@ The result will be something like this:
       <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
       <Reference URI="#req-e1cb1e11-b5c8-405b-80a3-792d5cf95253">
         <Transforms>
-          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
           <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
         </Transforms>
         <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
         <DigestValue>GAaNDqoETlEZxQKUx627kibxKc8=</DigestValue>
@@ -242,8 +242,8 @@ curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate2
       <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
       <Reference URI="#req-9a27848c-51cc-4e70-adba-e8812997a525">
         <Transforms>
-          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
           <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
         </Transforms>
         <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
         <DigestValue>jIaA/2uCpUQ/dNmj/Gt18x5Ynog=</DigestValue>
@@ -286,8 +286,8 @@ curl -i https://$ORG-$ENV.apigee.net/samlauthn/generate3
       <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
       <Reference URI="#req-c81b99e3-a11e-47ab-b990-d105db08ec7a">
         <Transforms>
-          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
           <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+          <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
         </Transforms>
         <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
         <DigestValue>JoB5QU/gMFsn1kXJLWIb4YQL8UtTFGtTqWs3c+lMRcs=</DigestValue>
