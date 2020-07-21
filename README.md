@@ -6,6 +6,8 @@ AuthnRequest, for use in SP-initiated login, with HTTP-POST binding or HTTP Redi
 
 For signature algorithms, it supports `rsa-sha1` and `rsa-sha256`.
 
+You do not need to build this callout in order to use it.
+
 
 ## Disclaimer
 
@@ -20,7 +22,8 @@ This code is open source but you don't need to compile it in order to use it.
 
 ## Building
 
-Use maven to build and package the jar. You need maven v3.5 at a minimum.
+You do not need to build this callout in order to use it.
+Even so, you can build it if you like. Use maven to build and package the jar. You need maven v3.5 at a minimum.
 
 ```
 mvn clean package

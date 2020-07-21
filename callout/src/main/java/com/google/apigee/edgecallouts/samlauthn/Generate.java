@@ -344,6 +344,12 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
               CanonicalizationMethod.EXCLUSIVE, (C14NMethodParameterSpec) null);
 
       // 8. get the SignedInfo
+      // the Signature must immediately follow the Issuer element.
+      // <sequence>
+      // <element ref="saml:Issuer" minOccurs="0"/>
+      // <element ref="ds:Signature" minOccurs="0"/>
+      // <element ref="samlp:Extensions" minOccurs="0"/>
+      // </sequence>
       DOMSignContext signingContext =
           new DOMSignContext(signConfiguration.privatekey, authnRequest, issuer.getNextSibling());
       SignedInfo signedInfo =
@@ -397,7 +403,10 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
       signature.sign(signingContext);
 
       // 12. set the string representation of the document into the output variable
-      msgCtxt.setVariable(getOutputVar(msgCtxt), getXmlString(doc));
+      String xmlString = getXmlString(doc);
+      msgCtxt.setVariable(getOutputVar(msgCtxt), xmlString);
+      String base64EncodedXml = Base64.getEncoder().encodeToString(xmlString.getBytes(StandardCharsets.UTF_8));
+      msgCtxt.setVariable(getOutputVar(msgCtxt)+"_b64", base64EncodedXml);
     }
   }
 
