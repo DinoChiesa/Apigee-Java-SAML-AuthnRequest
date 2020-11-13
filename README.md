@@ -63,7 +63,7 @@ Make sure these JARs are available as resources in the  proxy or in the environm
 Here's an example policy configuration:
 
 ```xml
-<JavaCallout name='Java-SAMLAuthn-Generate>
+<JavaCallout name='Java-SAMLAuthn-Generate'>
   <Properties>
     <Property name='output-variable'>output</Property>
     <Property name='private-key'>{my_private_key}</Property>
