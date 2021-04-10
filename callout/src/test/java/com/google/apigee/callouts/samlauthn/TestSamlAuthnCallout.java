@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.samlauthn;
+package com.google.apigee.callouts.samlauthn;
 
 import com.apigee.flow.execution.ExecutionResult;
 import java.io.ByteArrayInputStream;

@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-package com.google.apigee.edgecallouts.samlauthn;
+package com.google.apigee.callouts.samlauthn;
 
 public final class Constants {
 

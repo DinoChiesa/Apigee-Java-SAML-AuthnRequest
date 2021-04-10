@@ -9,6 +9,6 @@
     <Property name='destination'>{destination}</Property>
     <Property name='service-provider-name'>TestServiceProvider</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200720.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.samlauthn.Generate</ClassName>
+  <ResourceURL>java://apigee-samlauthn-20210409.jar</ResourceURL>
 </JavaCallout>

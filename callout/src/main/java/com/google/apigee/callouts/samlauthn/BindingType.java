@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.samlauthn;
+package com.google.apigee.callouts.samlauthn;
 
 public enum BindingType {
   NOT_SPECIFIED,

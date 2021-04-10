@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.samlauthn;
+package com.google.apigee.callouts.samlauthn;
 
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;

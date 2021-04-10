@@ -1,4 +1,4 @@
-# Java Callout for SAML AuthnRequest
+# Apigee Java Callout for SAML AuthnRequest
 
 This directory contains the Java source code and pom.xml file required to
 compile a simple Java callout for Apigee, that creates a signed SAML
@@ -15,7 +15,7 @@ This example is not an official Google product, nor is it part of an official Go
 
 ## License
 
-This material is Copyright 2018-2020, Google LLC.
+This material is Copyright 2018-2021, Google LLC.
 and is licensed under the Apache 2.0 license. See the [LICENSE](LICENSE) file.
 
 This code is open source but you don't need to compile it in order to use it.
@@ -37,7 +37,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-samlauthn-20200720.jar. Within that jar, there is a single callout class,
+There is a single jar, apigee-samlauthn-20200409.jar. Within that jar, there is a single callout class,
 
 * com.google.apigee.edgecallouts.samlauthn.Generate - generates a signed SAML AuthnRequest
 
@@ -73,8 +73,8 @@ Here's an example policy configuration:
     <Property name='issuer'>{issuer}</Property>
     <Property name='acs-url'>{acsUrl}</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.samlauthn.Generate</ClassName>
-  <ResourceURL>java://apigee-samlauthn-20200720.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.samlauthn.Generate</ClassName>
+  <ResourceURL>java://apigee-samlauthn-20210409.jar</ResourceURL>
 </JavaCallout>
 ```
 
