@@ -191,7 +191,7 @@ public class Generate extends SamlAuthnCalloutBase implements Execution {
     //   <element ref="samlp:Scoping" minOccurs="0"/>
     // </sequence>
 
-    // 3a. conditionally include Subject. This is dosallowed by SAML2.0
+    // 3a. conditionally include Subject. This is disallowed by SAML2.0
     if (signConfiguration.subject != null) {
       Element subject = doc.createElementNS(Namespaces.SAML, "saml:Subject");
       subject.setTextContent(signConfiguration.subject);
