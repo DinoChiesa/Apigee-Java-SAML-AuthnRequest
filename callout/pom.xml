@@ -132,8 +132,9 @@ do it manually by running these commands:
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <id>ant1</id>
@@ -153,6 +154,9 @@ do it manually by running these commands:
           <execution>
             <id>ant2</id>
             <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
             <configuration>
               <target>
                 <copy todir="${apiproxy.java.rsrc.dir}">
@@ -171,9 +175,6 @@ do it manually by running these commands:
                 </copy>
               </target>
             </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
